@@ -8,13 +8,13 @@ import { Autoplay } from "swiper/modules";
 
 const logos = [
   "/images/logo1.jpeg",
-  "/images/logo2.png",
+  "/images/logo2.PNG",
   "/images/logo3.png",
   "/images/logo4.png",
   "/images/logo5.png",
   "/images/logo6.png",
   "/images/logo7.png",
-  "/images/logo8.png",
+  "/images/logo8.PNG",
   "/images/logo9.png",
   "/images/logo10.png",
   "/images/logo11.png",
