@@ -133,7 +133,7 @@ const TestSwiper: FC = () => {
         }}></div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-left">
               <p className="text-blue-600 font-semibold mb-2">Our Testimonials</p>
               <h2 className="text-4xl font-bold text-gray-900 sm:text-5xl leading-tight">
