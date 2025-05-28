@@ -33,7 +33,9 @@ import {
   Linkedin,
   Youtube,
   Twitter,
-  CodeXml
+  CodeXml,
+  Facebook,
+  Instagram 
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -1035,6 +1037,8 @@ export default function Home() {
                   { icon: Linkedin, label: "LinkedIn" },
                   { icon: Youtube, label: "YouTube" },
                   { icon: Twitter, label: "Twitter" },
+                  { icon:Facebook , label: "Facebook" },
+                  { icon:Instagram  , label: "Instagram" },
                 ].map((social, index) => (
                   <motion.div
                     key={index}
