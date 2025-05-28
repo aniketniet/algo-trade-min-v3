@@ -45,6 +45,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import TestSwiper from "@/components/TestSwiper"
 import LogoSlider from "@/components/LogoSlider"
+import WhyChooseUs from "@/components/WhyChooseUs"
 
 // Animated Counter Component
 function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -797,6 +798,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <WhyChooseUs/>
 
       {/* Testimonials */}
       {/* <section className="py-20 sm:py-32 bg-gray-50">
