@@ -101,7 +101,7 @@ export default function Home() {
               
             </div> */}
             {/* <span className="text-xl font-bold text-gray-900">Algo Tradex Mind</span> */}
-            <img src='/site-logo.png' alt="logo" className="flex items-center pt-4" width={150}/>
+            <img src='/site-logo.png' alt="logo" className="flex items-center pt-5" width={170}/>
           </motion.div>
 
           {/* Desktop Navigation */}
