@@ -101,7 +101,7 @@ export default function Home() {
               
             </div> */}
             {/* <span className="text-xl font-bold text-gray-900">Algo Tradex Mind</span> */}
-            <img src='/site-logo.png' alt="logo" className="flex items-center pt-3" width={120}/>
+            <img src='/site-logo.png' alt="logo" className="flex items-center pt-4" width={150}/>
           </motion.div>
 
           {/* Desktop Navigation */}
@@ -1018,13 +1018,13 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="mb-6 flex items-center gap-2"
+                className="mb-0 flex items-center gap-2"
               >
                 {/* <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
                   <Bot className="h-5 w-5 text-white" />
                 </div> */}
                 {/* <span className="text-xl font-bold text-white">Algo Tradex Mind</span> */}
-                <img src='/logo-site1.png' alt="logo" className="flex items-center pt-3 text-white" width={120}/>
+                <img src='/logo-site1.png' alt="logo" className="flex items-center  text-white" width={170}/>
               </motion.div>
               <p className="mb-6 max-w-md text-gray-400">
                 Built by Traders. For Traders. India's leading algorithmic trading platform that makes automation
