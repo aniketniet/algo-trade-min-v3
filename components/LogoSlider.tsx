@@ -22,11 +22,11 @@ const logos = [
 
 const LogoSlider = () => {
   return (
-<div className="w-full pb-8 pt-32">
-  <h2 className="text-4xl font-bold text-center mb-8">
+<div className="w-full pb-8 pt-28">
+  <h2 className="text-4xl font-bold text-center mb-6">
     Supported Brokers
   </h2>
-  <span className="block text-base text-gray-500 text-center mb-12">
+  <span className="block text-base text-gray-500 text-center mb-20">
     Connect with your preferred broker seamlessly
   </span>
 
