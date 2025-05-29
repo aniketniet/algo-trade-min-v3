@@ -1078,14 +1078,20 @@ export default function Home() {
             <div>
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Docs</h3>
               <ul className="space-y-3">
-                {["Terms of Use", "Privacy Policy", "Refunds", "Disclaimer"].map((item) => (
-                  <li key={item}>
-                    <Link href="#" className="hover:text-white transition-colors">
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+  {[
+    { label: "Terms of Use", path: "/term" },
+    { label: "Privacy Policy", path: "/policy" },
+    { label: "Refunds", path: "/refunds" },
+    { label: "Disclaimer", path: "/disclaimer" },
+  ].map(({ label, path }) => (
+    <li key={label}>
+      <Link href={path} className="hover:text-white transition-colors">
+        {label}
+      </Link>
+    </li>
+  ))}
+</ul>
+
             </div>
 
             <div>
