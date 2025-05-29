@@ -46,6 +46,7 @@ import { Textarea } from "@/components/ui/textarea"
 import TestSwiper from "@/components/TestSwiper"
 import LogoSlider from "@/components/LogoSlider"
 import WhyChooseUs from "@/components/WhyChooseUs"
+import Trainer from "@/components/Trainer"
 
 // Animated Counter Component
 function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -688,6 +689,8 @@ export default function Home() {
           </motion.div>
         </div>
       </section> */}
+
+      <Trainer/>
 
       <LogoSlider/>
 

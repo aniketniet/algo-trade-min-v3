@@ -22,7 +22,7 @@ const itemVariants = {
 // The WhatYouCanAchieve component, replicating the provided structure and styling
 const WhatYouCanAchieve: React.FC = () => {
   return (
-    <section className="py-16 md:py-24 bg-white dark:bg-gray-800 overflow-hidden w-full max-w-7xl rounded-xl shadow-2xl p-4 md:p-8">
+    <section className="py-16 md:py-24  dark:bg-gray-800 overflow-hidden w-full max-w-7xl rounded-xl  p-4 md:p-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading with Framer Motion animations */}
         <motion.h2
@@ -45,35 +45,35 @@ const WhatYouCanAchieve: React.FC = () => {
         >
           {/* Individual list items */}
           <motion.li
-            className="flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+            className="cursor-pointer flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
             variants={itemVariants} // Apply item animation variants
           >
             <span className="text-2xl mr-4 text-blue-600 dark:text-blue-400">🚀</span>
             Cut emotional errors by up to 90%
           </motion.li>
           <motion.li
-            className="flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+            className="cursor-pointer flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
             variants={itemVariants}
           >
             <span className="text-2xl mr-4 text-blue-600 dark:text-blue-400">⚡</span>
             Increase execution speed by 10x
           </motion.li>
           <motion.li
-            className="flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+            className="cursor-pointer flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
             variants={itemVariants}
           >
             <span className="text-2xl mr-4 text-blue-600 dark:text-blue-400">⏰</span>
             Save hundreds of hours yearly
           </motion.li>
           <motion.li
-            className="flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+            className="cursor-pointer flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
             variants={itemVariants}
           >
             <span className="text-2xl mr-4 text-blue-600 dark:text-blue-400">🔄</span>
             Combine multiple strategies for diversification
           </motion.li>
           <motion.li
-            className="flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
+            className="cursor-pointer flex items-start bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300"
             variants={itemVariants}
           >
             <span className="text-2xl mr-4 text-blue-600 dark:text-blue-400">🤖</span>

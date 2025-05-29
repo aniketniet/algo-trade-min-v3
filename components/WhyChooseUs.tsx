@@ -39,7 +39,7 @@ const WhyChooseUs: React.FC = () => {
 
         {/* Table container with Framer Motion animations */}
         <motion.div
-          className="overflow-x-auto shadow-xl rounded-lg border border-gray-200 dark:border-gray-700"
+          className="overflow-x-auto  rounded-lg border border-gray-200 dark:border-gray-700"
           variants={containerVariants} // Apply container animation variants
           initial="hidden" // Initial state for the container
           whileInView="visible" // Animate to visible state when in view
