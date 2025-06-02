@@ -1,56 +1,44 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
+import React, { useState } from "react";
 import {
-  Activity,
-  Bell,
-  ChevronDown,
-  Home,
-  LogOut,
-  Menu,
-  MessageSquare,
   Plus,
-  Search,
-  Settings,
-  TrendingUp,
-  User,
-  Calendar,
   Target,
-  TestTube,
-  FileText,
   Play,
   Pause,
-  Copy,
-  Edit,
-  Trash2,
-  BarChart3,
   TrendingDown,
-} from "lucide-react"
+  FileText,
+  Clock,
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+export default function AlgoroomStrategyPage() {
+  const [activeTab, setActiveTab] = useState("Create Strategy");
+  const [strategyType, setStrategyType] = useState("Time Based");
+  const [orderType, setOrderType] = useState("MIS");
+  // const [selectedInstruments, setSelectedInstruments] = useState([]);
+  const [startTime, setStartTime] = useState("09:16");
+  const [endTime, setEndTime] = useState("03:15");
+  const [selectedDays, setSelectedDays] = useState([
+    "MON",
+    "TUE",
+    "WED",
+    "THU",
+    "FRI",
+  ]);
+  const [noTradeAfter, setNoTradeAfter] = useState("03:15");
+  const [profitTrailing, setProfitTrailing] = useState("No Trailing");
+  const [strategyName, setStrategyName] = useState("");
 
-export default function StrategiesPage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isCreateStrategyOpen, setIsCreateStrategyOpen] = useState(false)
+  const indices = [
+    {
+      name: "NIFTY",
+      value: "24776.60",
+      change: "-0.14",
+      color: "text-red-500",
+    },
+    { name: "BNF", value: "55903.40", change: "0.28", color: "text-green-500" },
+    { name: "FN", value: "26448.40", change: "-0.19", color: "text-red-500" },
+  ];
 
   const strategies = [
     {
@@ -83,439 +71,404 @@ export default function StrategiesPage() {
       createdAt: "2024-01-10",
       lastModified: "2024-01-18",
     },
-    {
-      id: 3,
-      name: "Breakout Hunter",
-      description: "Cryptocurrency breakout strategy with volume confirmation",
-      status: "Paused",
-      market: "Crypto",
-      timeframe: "15m",
-      roi: -2.1,
-      trades: 156,
-      winRate: 45.8,
-      maxDrawdown: 8.7,
-      sharpe: 0.3,
-      createdAt: "2024-01-05",
-      lastModified: "2024-01-19",
-    },
-    {
-      id: 4,
-      name: "Trend Following",
-      description: "Long-term trend following strategy for forex majors",
-      status: "Stopped",
-      market: "Forex",
-      timeframe: "1h",
-      roi: 31.2,
-      trades: 89,
-      winRate: 58.4,
-      maxDrawdown: 12.3,
-      sharpe: 1.4,
-      createdAt: "2023-12-20",
-      lastModified: "2024-01-15",
-    },
-  ]
+  ];
+
+  const tabs = [
+    "Create Strategy",
+    "My Strategies",
+    "Deployed Strategies",
+    "Strategy Template",
+    "My Portfolio",
+  ];
+  const days = ["MON", "TUE", "WED", "THU", "FRI"];
+
+  const toggleDay = (day) => {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+
+  const addInstrument = () => {
+    // Placeholder for add instrument functionality
+    console.log("Add instrument clicked");
+  };
 
   return (
-    <div className="flex min-h-screen bg-white text-gray-800">
-      {/* Sidebar */}
-      <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white md:flex">
-        <div className="flex h-20 items-center border-b border-gray-200 px-6">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-            <TrendingUp className="h-6 w-6 text-blue-600" />
-            <span>Algo Tradex Mind</span>
-          </Link>
-        </div>
-        <nav className="flex-1 space-y-1 px-2 py-4">
-          <Link
-            href="/dashboard"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Home className="mr-3 h-5 w-5 text-gray-500" />
-            Dashboard
-          </Link>
-          <Link
-            href="/dashboard/brokers"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Activity className="mr-3 h-5 w-5 text-gray-500" />
-            Brokers
-          </Link>
-          <Link
-            href="/dashboard/strategies"
-            className="flex items-center rounded-md bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700"
-          >
-            <Target className="mr-3 h-5 w-5 text-blue-600" />
-            Strategies
-          </Link>
-          <Link
-            href="/dashboard/backtest"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <TestTube className="mr-3 h-5 w-5 text-gray-500" />
-            Backtest
-          </Link>
-          <Link
-            href="/dashboard/reports"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <FileText className="mr-3 h-5 w-5 text-gray-500" />
-            Reports
-          </Link>
-          <Link
-            href="#"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Calendar className="mr-3 h-5 w-5 text-gray-500" />
-            Calendar
-          </Link>
-          <Link
-            href="#"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <MessageSquare className="mr-3 h-5 w-5 text-gray-500" />
-            Messages
-          </Link>
-          <Link
-            href="#"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Settings className="mr-3 h-5 w-5 text-gray-500" />
-            Settings
-          </Link>
-        </nav>
-        <div className="border-t border-gray-200 p-4">
-          <Link
-            href="/"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <LogOut className="mr-3 h-5 w-5 text-gray-500" />
-            Logout
-          </Link>
-        </div>
-      </aside>
-
-      {/* Mobile sidebar */}
-      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetTrigger asChild className="md:hidden">
-          <Button variant="ghost" size="icon" className="flex md:hidden">
-            <Menu className="h-6 w-6" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="border-r border-gray-200 bg-white p-0">
-          {/* Mobile nav content */}
-        </SheetContent>
-      </Sheet>
-
-      {/* Main content */}
-      <div className="flex flex-1 flex-col">
-        {/* Top navigation */}
-        <header className="flex h-20 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-6">
-          <div className="relative ml-4 hidden md:block">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <input
-              type="search"
-              placeholder="Search strategies..."
-              className="w-64 rounded-md border border-gray-300 bg-white py-2 pl-8 pr-4 text-sm text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="flex items-center gap-4 md:ml-auto">
-            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-blue-400">
-                    <User className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="hidden md:inline-block">John Doe</span>
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-white text-gray-800">
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
-
-        {/* Strategies content */}
-        <main className="flex-1 overflow-auto bg-gray-50 p-4 md:p-6">
-          <div className="mx-auto max-w-7xl">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold md:text-3xl">Trading Strategies</h1>
-                <p className="text-gray-600">Create, manage, and monitor your algorithmic trading strategies</p>
-              </div>
-              <Dialog open={isCreateStrategyOpen} onOpenChange={setIsCreateStrategyOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Strategy
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>Create New Strategy</DialogTitle>
-                    <DialogDescription>
-                      Build a new algorithmic trading strategy with custom parameters.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Tabs defaultValue="basic" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                      <TabsTrigger value="parameters">Parameters</TabsTrigger>
-                      <TabsTrigger value="risk">Risk Management</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="basic" className="space-y-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="strategy-name">Strategy Name</Label>
-                        <Input id="strategy-name" placeholder="Enter strategy name" />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" placeholder="Describe your strategy..." />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="market">Market</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select market" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="stocks">Stocks</SelectItem>
-                            <SelectItem value="forex">Forex</SelectItem>
-                            <SelectItem value="crypto">Cryptocurrency</SelectItem>
-                            <SelectItem value="futures">Futures</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="timeframe">Timeframe</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select timeframe" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1m">1 Minute</SelectItem>
-                            <SelectItem value="5m">5 Minutes</SelectItem>
-                            <SelectItem value="15m">15 Minutes</SelectItem>
-                            <SelectItem value="1h">1 Hour</SelectItem>
-                            <SelectItem value="4h">4 Hours</SelectItem>
-                            <SelectItem value="1d">1 Day</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TabsContent>
-                    <TabsContent value="parameters" className="space-y-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="entry-signal">Entry Signal</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select entry signal" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ma-cross">Moving Average Crossover</SelectItem>
-                            <SelectItem value="rsi-oversold">RSI Oversold</SelectItem>
-                            <SelectItem value="breakout">Price Breakout</SelectItem>
-                            <SelectItem value="mean-reversion">Mean Reversion</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="exit-signal">Exit Signal</Label>
-                        <Select>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select exit signal" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="take-profit">Take Profit</SelectItem>
-                            <SelectItem value="stop-loss">Stop Loss</SelectItem>
-                            <SelectItem value="trailing-stop">Trailing Stop</SelectItem>
-                            <SelectItem value="time-based">Time Based</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="ma-period">MA Period</Label>
-                          <Input id="ma-period" type="number" placeholder="20" />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="rsi-period">RSI Period</Label>
-                          <Input id="rsi-period" type="number" placeholder="14" />
-                        </div>
-                      </div>
-                    </TabsContent>
-                    <TabsContent value="risk" className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="position-size">Position Size (%)</Label>
-                          <Input id="position-size" type="number" placeholder="2" />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="max-positions">Max Positions</Label>
-                          <Input id="max-positions" type="number" placeholder="5" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="stop-loss">Stop Loss (%)</Label>
-                          <Input id="stop-loss" type="number" placeholder="2" />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="take-profit">Take Profit (%)</Label>
-                          <Input id="take-profit" type="number" placeholder="4" />
-                        </div>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="max-drawdown">Max Drawdown (%)</Label>
-                        <Input id="max-drawdown" type="number" placeholder="10" />
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                  <DialogFooter>
-                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                      Create Strategy
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+    <div className="min-h-screen  bg-gray-50">
+      {/* Main Content */}
+      <div className="w-full ">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {tabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === tab
+                      ? "bg-blue-100 text-blue-700"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
+          </div>
+        </div>
 
-            {/* Summary Cards */}
-            <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Card className="border-gray-200 bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Strategies</CardTitle>
-                </CardHeader>
-                <CardContent>
+        {/* Content Area */}
+        <div className="w-full p-6">
+          {activeTab === "Create Strategy" && (
+            <div className="max-w-4xl">
+              {/* Strategy Type */}
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold mb-4">Strategy Type</h2>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setStrategyType("Time Based")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      strategyType === "Time Based"
+                        ? "bg-blue-100 text-blue-700 border border-blue-200"
+                        : "bg-gray-100 text-gray-600 border border-gray-200"
+                    }`}
+                  >
+                    Time Based
+                  </button>
+                  <button
+                    onClick={() => setStrategyType("Indicator Based")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      strategyType === "Indicator Based"
+                        ? "bg-blue-100 text-blue-700 border border-blue-200"
+                        : "bg-gray-100 text-gray-600 border border-gray-200"
+                    }`}
+                  >
+                    Indicator Based
+                  </button>
+                </div>
+              </div>
+
+              {/* Select Instruments */}
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold mb-4">
+                  Select Instruments
+                </h2>
+                <div
+                  onClick={addInstrument}
+                  className="w-64 h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                >
+                  <Plus className="w-8 h-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-blue-600 font-medium">
+                    Add Instruments.
+                  </span>
+                </div>
+              </div>
+
+              {/* Order Configuration */}
+              <div className="grid grid-cols-2 gap-8 mb-8">
+                <div>
+                  <h3 className="font-medium mb-4">Order Type</h3>
+                  <div className="flex gap-4">
+                    {["MIS", "CNC", "BTST"].map((type) => (
+                      <label
+                        key={type}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="radio"
+                          name="orderType"
+                          value={type}
+                          checked={orderType === type}
+                          onChange={(e) => setOrderType(e.target.value)}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-sm">{type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-medium mb-4">Timing</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Start time
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                        <span className="text-xs text-gray-500">AM</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Square off
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                        <span className="text-xs text-gray-500">PM</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trading Days */}
+              <div className="mb-8">
+                <h3 className="font-medium mb-4">Trading Days</h3>
+                <div className="flex gap-2">
+                  {days.map((day) => (
+                    <button
+                      key={day}
+                      onClick={() => toggleDay(day)}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        selectedDays.includes(day)
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Ready-made Templates */}
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  Readymade Templates
+                  <button className="text-blue-600 hover:text-blue-700">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </button>
+                </h2>
+              </div>
+
+              {/* Order Legs */}
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Order Legs</h2>
+                  <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                    ADD LEG
+                  </button>
+                </div>
+              </div>
+
+              {/* Risk Management */}
+              <div className="mb-8 border-t border-gray-200 pt-6">
+                <h2 className="text-lg font-semibold mb-6">Risk management</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Exit When Over All Profit In Amount (INR)"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="Exit When Over All Loss In Amount(INR)"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <div className="relative">
+                      <label className="block absolute -top-3 left-2 bg-white text-sm text-gray-600 mb-2">
+                        No Trade After
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          value={noTradeAfter}
+                          onChange={(e) => setNoTradeAfter(e.target.value)}
+                          className="px-3 py-2 border border-blue-500 rounded-lg text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <span className="text-xs text-gray-500">PM</span>
+                        <Clock className="w-4 h-4 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profit Trailing */}
+              <div className="mb-8 border-t border-gray-200 pt-6">
+                <h2 className="text-lg font-semibold mb-4">Profit Trailing</h2>
+                <div className="flex gap-6">
+                  {[
+                    "No Trailing",
+                    "Lock Fix Profit",
+                    "Trail Profit",
+                    "Lock and Trail",
+                  ].map((option) => (
+                    <label
+                      key={option}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        name="profitTrailing"
+                        value={option}
+                        checked={profitTrailing === option}
+                        onChange={(e) => setProfitTrailing(e.target.value)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{option}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Strategy Name and Save */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 mr-4">
+                    <input
+                      type="text"
+                      placeholder="Strategy name"
+                      value={strategyName}
+                      onChange={(e) => setStrategyName(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                      <svg
+                        className="w-5 h-5 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                        />
+                      </svg>
+                    </button>
+                    <button className="px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                      Save & Continue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "My Strategies" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold">My Trading Strategies</h1>
+                  <p className="text-gray-600">
+                    Manage and monitor your algorithmic trading strategies
+                  </p>
+                </div>
+              </div>
+
+              {/* Summary Cards */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <div className="text-sm font-medium text-gray-600 mb-2">
+                    Total Strategies
+                  </div>
                   <div className="text-2xl font-bold">4</div>
-                  <p className="text-xs text-gray-500 mt-1">2 running, 1 paused, 1 stopped</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-gray-200 bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Avg ROI</CardTitle>
-                </CardHeader>
-                <CardContent>
+                  <p className="text-xs text-gray-500 mt-1">
+                    2 running, 1 paused, 1 stopped
+                  </p>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <div className="text-sm font-medium text-gray-600 mb-2">
+                    Avg ROI
+                  </div>
                   <div className="text-2xl font-bold text-green-600">18.0%</div>
-                  <p className="text-xs text-gray-500 mt-1">Across all strategies</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-gray-200 bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Trades</CardTitle>
-                </CardHeader>
-                <CardContent>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Across all strategies
+                  </p>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <div className="text-sm font-medium text-gray-600 mb-2">
+                    Total Trades
+                  </div>
                   <div className="text-2xl font-bold">1,924</div>
                   <p className="text-xs text-gray-500 mt-1">This month</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-gray-200 bg-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Avg Win Rate</CardTitle>
-                </CardHeader>
-                <CardContent>
+                </div>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <div className="text-sm font-medium text-gray-600 mb-2">
+                    Avg Win Rate
+                  </div>
                   <div className="text-2xl font-bold">62.0%</div>
                   <p className="text-xs text-gray-500 mt-1">Weighted average</p>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </div>
 
-            {/* Strategies List */}
-            <div className="grid gap-6">
-              {strategies.map((strategy) => (
-                <Card key={strategy.id} className="border-gray-200 bg-white">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
+              {/* Strategies List */}
+              <div className="space-y-4">
+                {strategies.map((strategy) => (
+                  <div
+                    key={strategy.id}
+                    className="bg-white rounded-lg border border-gray-200 p-6"
+                  >
+                    <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-                          <Target className="h-6 w-6 text-blue-600" />
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <Target className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold">{strategy.name}</h3>
-                          <p className="text-sm text-gray-600">{strategy.description}</p>
+                          <h3 className="text-lg font-semibold">
+                            {strategy.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {strategy.description}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className={
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${
                             strategy.status === "Running"
-                              ? "border-green-200 text-green-700"
+                              ? "border-green-200 text-green-700 bg-green-50"
                               : strategy.status === "Paused"
-                                ? "border-yellow-200 text-yellow-700"
-                                : "border-red-200 text-red-700"
-                          }
+                              ? "border-yellow-200 text-yellow-700 bg-yellow-50"
+                              : "border-red-200 text-red-700 bg-red-50"
+                          }`}
                         >
                           {strategy.status === "Running" ? (
-                            <Play className="mr-1 h-3 w-3" />
+                            <Play className="w-3 h-3" />
                           ) : strategy.status === "Paused" ? (
-                            <Pause className="mr-1 h-3 w-3" />
+                            <Pause className="w-3 h-3" />
                           ) : (
-                            <TrendingDown className="mr-1 h-3 w-3" />
+                            <TrendingDown className="w-3 h-3" />
                           )}
                           {strategy.status}
-                        </Badge>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <ChevronDown className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {strategy.status === "Running" ? (
-                              <DropdownMenuItem>
-                                <Pause className="mr-2 h-4 w-4" />
-                                Pause Strategy
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem>
-                                <Play className="mr-2 h-4 w-4" />
-                                Start Strategy
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem>
-                              <Copy className="mr-2 h-4 w-4" />
-                              Clone Strategy
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Strategy
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <BarChart3 className="mr-2 h-4 w-4" />
-                              View Analytics
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Strategy
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        </span>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
+
                     <div className="grid gap-4 md:grid-cols-4">
                       <div className="space-y-3">
                         <div>
@@ -530,14 +483,22 @@ export default function StrategiesPage() {
                       <div className="space-y-3">
                         <div>
                           <p className="text-sm text-gray-600">ROI</p>
-                          <p className={`font-semibold ${strategy.roi >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          <p
+                            className={`font-semibold ${
+                              strategy.roi >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
                             {strategy.roi >= 0 ? "+" : ""}
                             {strategy.roi}%
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Total Trades</p>
-                          <p className="font-semibold">{strategy.trades.toLocaleString()}</p>
+                          <p className="font-semibold">
+                            {strategy.trades.toLocaleString()}
+                          </p>
                         </div>
                       </div>
                       <div className="space-y-3">
@@ -547,7 +508,9 @@ export default function StrategiesPage() {
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Max Drawdown</p>
-                          <p className="font-semibold text-red-600">{strategy.maxDrawdown}%</p>
+                          <p className="font-semibold text-red-600">
+                            {strategy.maxDrawdown}%
+                          </p>
                         </div>
                       </div>
                       <div className="space-y-3">
@@ -557,17 +520,37 @@ export default function StrategiesPage() {
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Created</p>
-                          <p className="text-sm text-gray-500">{strategy.createdAt}</p>
+                          <p className="text-sm text-gray-500">
+                            {strategy.createdAt}
+                          </p>
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </main>
+          )}
+
+          {(activeTab === "Deployed Strategies" ||
+            activeTab === "Strategy Template" ||
+            activeTab === "My Portfolio") && (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                  {activeTab}
+                </h3>
+                <p className="text-gray-500">
+                  This section is under development
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
+import { useState } from "react";
+import Link from "next/link";
 import {
   Activity,
   Bell,
@@ -24,16 +24,27 @@ import {
   BarChart3,
   TrendingDown,
   Clock,
-} from "lucide-react"
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -42,12 +53,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Progress } from "@/components/ui/progress"
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 
 export default function BacktestPage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isNewBacktestOpen, setIsNewBacktestOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isNewBacktestOpen, setIsNewBacktestOpen] = useState(false);
 
   const backtests = [
     {
@@ -114,156 +125,25 @@ export default function BacktestPage() {
       duration: "4h 12m",
       completedAt: "2024-01-15 16:45",
     },
-  ]
+  ];
 
   return (
-    <div className="flex min-h-screen bg-white text-gray-800">
-      {/* Sidebar */}
-      <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white md:flex">
-        <div className="flex h-20 items-center border-b border-gray-200 px-6">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-            <TrendingUp className="h-6 w-6 text-blue-600" />
-            <span>Algo Tradex Mind</span>
-          </Link>
-        </div>
-        <nav className="flex-1 space-y-1 px-2 py-4">
-          <Link
-            href="/dashboard"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Home className="mr-3 h-5 w-5 text-gray-500" />
-            Dashboard
-          </Link>
-          <Link
-            href="/dashboard/brokers"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Activity className="mr-3 h-5 w-5 text-gray-500" />
-            Brokers
-          </Link>
-          <Link
-            href="/dashboard/strategies"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Target className="mr-3 h-5 w-5 text-gray-500" />
-            Strategies
-          </Link>
-          <Link
-            href="/dashboard/backtest"
-            className="flex items-center rounded-md bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700"
-          >
-            <TestTube className="mr-3 h-5 w-5 text-blue-600" />
-            Backtest
-          </Link>
-          <Link
-            href="/dashboard/reports"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <FileText className="mr-3 h-5 w-5 text-gray-500" />
-            Reports
-          </Link>
-          <Link
-            href="#"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Calendar className="mr-3 h-5 w-5 text-gray-500" />
-            Calendar
-          </Link>
-          <Link
-            href="#"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <MessageSquare className="mr-3 h-5 w-5 text-gray-500" />
-            Messages
-          </Link>
-          <Link
-            href="#"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <Settings className="mr-3 h-5 w-5 text-gray-500" />
-            Settings
-          </Link>
-        </nav>
-        <div className="border-t border-gray-200 p-4">
-          <Link
-            href="/"
-            className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-          >
-            <LogOut className="mr-3 h-5 w-5 text-gray-500" />
-            Logout
-          </Link>
-        </div>
-      </aside>
-
-      {/* Mobile sidebar */}
-      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetTrigger asChild className="md:hidden">
-          <Button variant="ghost" size="icon" className="flex md:hidden">
-            <Menu className="h-6 w-6" />
-            <span className="sr-only">Toggle menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="border-r border-gray-200 bg-white p-0">
-          {/* Mobile nav content */}
-        </SheetContent>
-      </Sheet>
-
-      {/* Main content */}
-      <div className="flex flex-1 flex-col">
-        {/* Top navigation */}
-        <header className="flex h-20 items-center justify-between border-b border-gray-200 bg-white px-4 md:px-6">
-          <div className="relative ml-4 hidden md:block">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <input
-              type="search"
-              placeholder="Search backtests..."
-              className="w-64 rounded-md border border-gray-300 bg-white py-2 pl-8 pr-4 text-sm text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="flex items-center gap-4 md:ml-auto">
-            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-blue-400">
-                    <User className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="hidden md:inline-block">John Doe</span>
-                  <ChevronDown className="h-4 w-4 text-gray-500" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-white text-gray-800">
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
-
-        {/* Backtest content */}
+   
         <main className="flex-1 overflow-auto bg-gray-50 p-4 md:p-6">
           <div className="mx-auto max-w-7xl">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold md:text-3xl">Strategy Backtesting</h1>
-                <p className="text-gray-600">Test your strategies against historical market data</p>
+                <h1 className="text-2xl font-bold md:text-3xl">
+                  Strategy Backtesting
+                </h1>
+                <p className="text-gray-600">
+                  Test your strategies against historical market data
+                </p>
               </div>
-              <Dialog open={isNewBacktestOpen} onOpenChange={setIsNewBacktestOpen}>
+              <Dialog
+                open={isNewBacktestOpen}
+                onOpenChange={setIsNewBacktestOpen}
+              >
                 <DialogTrigger asChild>
                   <Button className="bg-blue-600 hover:bg-blue-700">
                     <Plus className="mr-2 h-4 w-4" />
@@ -273,12 +153,17 @@ export default function BacktestPage() {
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
                     <DialogTitle>Create New Backtest</DialogTitle>
-                    <DialogDescription>Configure parameters for your strategy backtest.</DialogDescription>
+                    <DialogDescription>
+                      Configure parameters for your strategy backtest.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
                       <Label htmlFor="backtest-name">Backtest Name</Label>
-                      <Input id="backtest-name" placeholder="Enter backtest name" />
+                      <Input
+                        id="backtest-name"
+                        placeholder="Enter backtest name"
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="strategy-select">Strategy</Label>
@@ -287,9 +172,15 @@ export default function BacktestPage() {
                           <SelectValue placeholder="Select strategy" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="momentum">Momentum Scalper</SelectItem>
-                          <SelectItem value="mean-reversion">Mean Reversion</SelectItem>
-                          <SelectItem value="breakout">Breakout Hunter</SelectItem>
+                          <SelectItem value="momentum">
+                            Momentum Scalper
+                          </SelectItem>
+                          <SelectItem value="mean-reversion">
+                            Mean Reversion
+                          </SelectItem>
+                          <SelectItem value="breakout">
+                            Breakout Hunter
+                          </SelectItem>
                           <SelectItem value="trend">Trend Following</SelectItem>
                         </SelectContent>
                       </Select>
@@ -306,15 +197,27 @@ export default function BacktestPage() {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="initial-capital">Initial Capital</Label>
-                      <Input id="initial-capital" type="number" placeholder="100000" />
+                      <Input
+                        id="initial-capital"
+                        type="number"
+                        placeholder="100000"
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="commission">Commission per Trade</Label>
-                      <Input id="commission" type="number" step="0.01" placeholder="0.005" />
+                      <Input
+                        id="commission"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.005"
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                    <Button
+                      type="submit"
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
                       Start Backtest
                     </Button>
                   </DialogFooter>
@@ -326,41 +229,57 @@ export default function BacktestPage() {
             <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Card className="border-gray-200 bg-white">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Backtests</CardTitle>
+                  <CardTitle className="text-sm font-medium text-gray-600">
+                    Total Backtests
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">4</div>
-                  <p className="text-xs text-gray-500 mt-1">2 completed, 1 running, 1 failed</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    2 completed, 1 running, 1 failed
+                  </p>
                 </CardContent>
               </Card>
 
               <Card className="border-gray-200 bg-white">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Best ROI</CardTitle>
+                  <CardTitle className="text-sm font-medium text-gray-600">
+                    Best ROI
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">31.2%</div>
-                  <p className="text-xs text-gray-500 mt-1">Trend Following strategy</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Trend Following strategy
+                  </p>
                 </CardContent>
               </Card>
 
               <Card className="border-gray-200 bg-white">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Avg Sharpe Ratio</CardTitle>
+                  <CardTitle className="text-sm font-medium text-gray-600">
+                    Avg Sharpe Ratio
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">1.65</div>
-                  <p className="text-xs text-gray-500 mt-1">Risk-adjusted returns</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Risk-adjusted returns
+                  </p>
                 </CardContent>
               </Card>
 
               <Card className="border-gray-200 bg-white">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Trades</CardTitle>
+                  <CardTitle className="text-sm font-medium text-gray-600">
+                    Total Trades
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">1,924</div>
-                  <p className="text-xs text-gray-500 mt-1">Across all backtests</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Across all backtests
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -376,7 +295,9 @@ export default function BacktestPage() {
                           <TestTube className="h-6 w-6 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold">{backtest.name}</h3>
+                          <h3 className="text-lg font-semibold">
+                            {backtest.name}
+                          </h3>
                           <p className="text-sm text-gray-600">
                             {backtest.strategy} • {backtest.period}
                           </p>
@@ -389,8 +310,8 @@ export default function BacktestPage() {
                             backtest.status === "Completed"
                               ? "border-green-200 text-green-700"
                               : backtest.status === "Running"
-                                ? "border-blue-200 text-blue-700"
-                                : "border-red-200 text-red-700"
+                              ? "border-blue-200 text-blue-700"
+                              : "border-red-200 text-red-700"
                           }
                         >
                           {backtest.status === "Completed" ? (
@@ -430,8 +351,12 @@ export default function BacktestPage() {
                     {backtest.status === "Running" && (
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-600">Progress</span>
-                          <span className="text-sm text-gray-600">{backtest.progress}%</span>
+                          <span className="text-sm text-gray-600">
+                            Progress
+                          </span>
+                          <span className="text-sm text-gray-600">
+                            {backtest.progress}%
+                          </span>
                         </div>
                         <Progress value={backtest.progress} className="h-2" />
                       </div>
@@ -441,7 +366,11 @@ export default function BacktestPage() {
                         <div>
                           <p className="text-sm text-gray-600">ROI</p>
                           <p
-                            className={`text-lg font-semibold ${backtest.roi >= 0 ? "text-green-600" : "text-red-600"}`}
+                            className={`text-lg font-semibold ${
+                              backtest.roi >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
                           >
                             {backtest.roi >= 0 ? "+" : ""}
                             {backtest.roi}%
@@ -449,7 +378,9 @@ export default function BacktestPage() {
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Total Trades</p>
-                          <p className="font-semibold">{backtest.trades.toLocaleString()}</p>
+                          <p className="font-semibold">
+                            {backtest.trades.toLocaleString()}
+                          </p>
                         </div>
                       </div>
                       <div className="space-y-3">
@@ -459,7 +390,9 @@ export default function BacktestPage() {
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Max Drawdown</p>
-                          <p className="font-semibold text-red-600">{backtest.maxDrawdown}%</p>
+                          <p className="font-semibold text-red-600">
+                            {backtest.maxDrawdown}%
+                          </p>
                         </div>
                       </div>
                       <div className="space-y-3">
@@ -479,7 +412,9 @@ export default function BacktestPage() {
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Duration</p>
-                          <p className="text-sm text-gray-500">{backtest.duration}</p>
+                          <p className="text-sm text-gray-500">
+                            {backtest.duration}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -489,7 +424,6 @@ export default function BacktestPage() {
             </div>
           </div>
         </main>
-      </div>
-    </div>
-  )
+     
+  );
 }
