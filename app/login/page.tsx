@@ -10,6 +10,7 @@ import { Eye, EyeOff, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useAuth } from "@/context/authContext"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -17,11 +18,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // In a real app, you would handle authentication here
-    router.push("/dashboard")
-  }
+  const { login } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await login({ email, password });
+    } catch (err) {
+      alert("Login failed. Please check credentials.");
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-gray-800">
@@ -135,7 +141,7 @@ export default function LoginPage() {
 
               <div className="mt-6 text-center text-sm text-gray-600">
                 Don&apos;t have an account?{" "}
-                <Link href="#" className="text-blue-600 hover:text-blue-700">
+                <Link href="/register" className="text-blue-600 hover:text-blue-700">
                   Sign up
                 </Link>
               </div>

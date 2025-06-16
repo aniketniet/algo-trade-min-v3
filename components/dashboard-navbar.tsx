@@ -19,10 +19,23 @@ import {
 import { Button } from "./ui/button";
 import Link from "next/link";
 import { Input } from "postcss";
+import { useAuth } from "@/context/authContext";
 
 const DashboardNavbar = () => {
   const [isPassportChangeDialogOpen, setPassportChangeDialogOpen] =
     useState(false);
+
+      const { logout} = useAuth();
+
+  const handleLogOut = () => {
+    logout();
+    // Optionally redirect to login page or show a message
+    console.log("User logged out");
+  }
+  
+
+
+    
 
   const handlePassportChange = () => {
     setPassportChangeDialogOpen(true);
@@ -106,12 +119,12 @@ const DashboardNavbar = () => {
                 <SearchCodeIcon className="mr-2 h-4 w-4" />
                 <span>Change Passport</span>
               </DropdownMenuItem>
-              <Link href="/" passHref>
-                <DropdownMenuItem>
+           
+                <DropdownMenuItem onClick={handleLogOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>
-              </Link>
+          
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -1,81 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
+import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const BrokerModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedBroker, setSelectedBroker] = useState(null);
   const [formData, setFormData] = useState({});
+  const [brokers, setBrokers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const  token = Cookies.get('token');
 
-  const brokers = [
-    {
-      id: 'xts',
-      name: 'XTS',
-      logo: '🔸',
-      color: 'bg-orange-500',
-      fields: [
-        { name: 'brokerId', label: 'Enter Broker ID', type: 'text', placeholder: 'Enter your broker ID' },
-        { name: 'appName', label: 'App Name (Any)', type: 'text', placeholder: 'Enter app name' },
-        { name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Enter your API key' },
-        { name: 'apiSecret', label: 'API Secret Key', type: 'password', placeholder: 'Enter your API secret key' }
-      ]
-    },
-    {
-      id: 'zerodha',
-      name: 'Zerodha',
-      logo: '📊',
-      color: 'bg-red-500',
-      fields: [
-        { name: 'userId', label: 'User ID', type: 'text', placeholder: 'Enter your user ID' },
-        { name: 'password', label: 'Password', type: 'password', placeholder: 'Enter your password' },
-        { name: 'pin', label: 'PIN', type: 'password', placeholder: 'Enter your PIN' },
-        { name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Enter your API key' }
-      ]
-    },
-    {
-      id: 'upstox',
-      name: 'Upstox',
-      logo: '🔺',
-      color: 'bg-purple-500',
-      fields: [
-        { name: 'clientId', label: 'Client ID', type: 'text', placeholder: 'Enter your client ID' },
-        { name: 'clientSecret', label: 'Client Secret', type: 'password', placeholder: 'Enter your client secret' },
-        { name: 'redirectUri', label: 'Redirect URI', type: 'text', placeholder: 'Enter redirect URI' }
-      ]
-    },
-    {
-      id: 'fyers',
-      name: 'FYERS',
-      logo: '🔷',
-      color: 'bg-blue-500',
-      fields: [
-        { name: 'fyToken', label: 'FY Token', type: 'password', placeholder: 'Enter your FY token' },
-        { name: 'appId', label: 'App ID', type: 'text', placeholder: 'Enter your app ID' },
-        { name: 'accessToken', label: 'Access Token', type: 'password', placeholder: 'Enter your access token' }
-      ]
-    },
-    {
-      id: 'angelone',
-      name: 'Angel One',
-      logo: '📈',
-      color: 'bg-green-500',
-      fields: [
-        { name: 'clientCode', label: 'Client Code', type: 'text', placeholder: 'Enter your client code' },
-        { name: 'password', label: 'Password', type: 'password', placeholder: 'Enter your password' },
-        { name: 'totp', label: 'TOTP', type: 'text', placeholder: 'Enter TOTP from authenticator' },
-        { name: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Enter your API key' }
-      ]
-    },
-    {
-      id: 'dhan',
-      name: 'Dhan',
-      logo: '💰',
-      color: 'bg-teal-500',
-      fields: [
-        { name: 'clientId', label: 'Client ID', type: 'text', placeholder: 'Enter your client ID' },
-        { name: 'accessToken', label: 'Access Token', type: 'password', placeholder: 'Enter your access token' }
-      ]
+  // Fetch brokers from API
+  useEffect(() => {
+    const fetchBrokers = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get('http://localhost:4000/api/user/brokers', {
+          headers: {
+            'Authorization': 'Bearer ' + token,
+          }
+        });
+        setBrokers(response.data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchBrokers();
     }
-  ];
+  }, [isOpen]);
 
   const handleInputChange = (fieldName, value) => {
     setFormData(prev => ({
@@ -84,21 +42,94 @@ const BrokerModal = () => {
     }));
   };
 
+  const handleFileChange = async (fieldName, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('brokerId', selectedBroker._id);
+    formData.append('fieldId', fieldName);
+
+    try {
+      const response = await axios.post(
+        'http://localhost:4000/api/user/submissions',
+        formData,
+        {
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: response.data.fileUrl // Assuming API returns file URL
+      }));
+    } catch (err) {
+      console.error('Error uploading file:', err);
+    }
+  };
+
   const handleBrokerSelect = (broker) => {
     setSelectedBroker(broker);
     setFormData({});
   };
 
-  const handleSubmit = () => {
-    console.log('Submitting:', { broker: selectedBroker.id, data: formData });
-    setIsOpen(false);
-    setSelectedBroker(null);
-    setFormData({});
+  const handleSubmit = async () => {
+    try {
+      const formPayload = new FormData();
+      formPayload.append('brokerId', selectedBroker._id);
+      
+      // Append all fields to the form data
+      Object.entries(formData).forEach(([fieldId, value]) => {
+        if (value instanceof File) {
+          formPayload.append('file', value);
+          formPayload.append('fieldId', fieldId);
+        } else {
+          formPayload.append('fieldId', fieldId);
+          formPayload.append('value', value);
+        }
+      });
+
+      await axios.post('http://localhost:4000/api/user/submissions', formPayload, {
+        headers: {
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODRmYzYyYzgyYjU3NDYyZTE2NjUyMTYiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc1MDA1ODU1MiwiZXhwIjoxNzUwNjYzMzUyfQ.pIaIN4yvK-X-_6xYE5u9d6Mnsnkzf3WVO4mL33VO4X4',
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setIsOpen(false);
+      setSelectedBroker(null);
+      setFormData({});
+      alert('Broker submitted successfully!');
+    } catch (err) {
+      console.error('Error submitting broker:', err);
+      alert('Failed to submit broker. Please try again.');
+    }
   };
 
   const handleBack = () => {
     setSelectedBroker(null);
     setFormData({});
+  };
+
+  // Map API broker data to our expected format
+  const getBrokerLogo = (brokerName) => {
+    const logos = {
+      'Home Insurance': '🏠',
+      'Up Stock': '📈',
+      'Upstock': '🔺',
+      'satish': '👤'
+    };
+    return logos[brokerName] || '📊';
+  };
+
+  const getBrokerColor = (brokerName) => {
+    const colors = {
+      'Home Insurance': 'bg-green-500',
+      'Up Stock': 'bg-purple-500',
+      'Upstock': 'bg-blue-500',
+      'satish': 'bg-yellow-500'
+    };
+    return colors[brokerName] || 'bg-gray-500';
   };
 
   return (
@@ -145,34 +176,44 @@ const BrokerModal = () => {
             <div className="flex h-[calc(90vh-80px)]">
               {/* Left side - Broker Selection */}
               <div className="w-1/2 p-6 border-r overflow-y-auto">
-                <div className="mb-6">
-                  <input
-                    type="text"
-                    placeholder="Search Brokers"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                
-                <h3 className="text-sm font-medium text-gray-500 mb-4">Popular Brokers</h3>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  {brokers.map((broker) => (
-                    <button
-                      key={broker.id}
-                      onClick={() => handleBrokerSelect(broker)}
-                      className={`flex flex-col items-center p-4 border rounded-lg transition-all ${
-                        selectedBroker?.id === broker.id 
-                          ? 'border-blue-500 bg-blue-50 shadow-md' 
-                          : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
-                      }`}
-                    >
-                      <div className={`w-12 h-12 rounded-full ${broker.color} flex items-center justify-center text-white text-lg mb-2`}>
-                        {broker.logo}
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">{broker.name}</span>
-                    </button>
-                  ))}
-                </div>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-full">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : error ? (
+                  <div className="text-red-500 text-center p-4">{error}</div>
+                ) : (
+                  <>
+                    <div className="mb-6">
+                      <input
+                        type="text"
+                        placeholder="Search Brokers"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <h3 className="text-sm font-medium text-gray-500 mb-4">Available Brokers</h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      {brokers.map((broker) => (
+                        <button
+                          key={broker._id}
+                          onClick={() => handleBrokerSelect(broker)}
+                          className={`flex flex-col items-center p-4 border rounded-lg transition-all ${
+                            selectedBroker?._id === broker._id 
+                              ? 'border-blue-500 bg-blue-50 shadow-md' 
+                              : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                          }`}
+                        >
+                          <div className={`w-12 h-12 rounded-full ${getBrokerColor(broker.name)} flex items-center justify-center text-white text-lg mb-2`}>
+                            {getBrokerLogo(broker.name)}
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">{broker.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Right side - Form or Empty State */}
@@ -192,8 +233,8 @@ const BrokerModal = () => {
                   // Broker Form
                   <div>
                     <div className="flex items-center gap-3 mb-6">
-                      <div className={`w-12 h-12 rounded-full ${selectedBroker.color} flex items-center justify-center text-white text-lg`}>
-                        {selectedBroker.logo}
+                      <div className={`w-12 h-12 rounded-full ${getBrokerColor(selectedBroker.name)} flex items-center justify-center text-white text-lg`}>
+                        {getBrokerLogo(selectedBroker.name)}
                       </div>
                       <div>
                         <h3 className="font-semibold">{selectedBroker.name}</h3>
@@ -203,45 +244,41 @@ const BrokerModal = () => {
 
                     <div className="space-y-4">
                       {selectedBroker.fields.map((field) => (
-                        <div key={field.name}>
+                        <div key={field._id}>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            {field.label}
+                            {field.label} {field.required && <span className="text-red-500">*</span>}
                           </label>
-                          <input
-                            type={field.type}
-                            placeholder={field.placeholder}
-                            value={formData[field.name] || ''}
-                            onChange={(e) => handleInputChange(field.name, e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
+                          {field.type === 'file' ? (
+                            <div>
+                              <input
+                                type="file"
+                                onChange={(e) => handleFileChange(field.name, e.target.files[0])}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              {formData[field.name] && (
+                                <p className="text-sm text-green-600 mt-1">File uploaded successfully</p>
+                              )}
+                            </div>
+                          ) : (
+                            <input
+                              type={field.type}
+                              placeholder={field.placeholder}
+                              value={formData[field.name] || ''}
+                              onChange={(e) => handleInputChange(field.name, e.target.value)}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              required={field.required}
+                            />
+                          )}
                         </div>
                       ))}
                     </div>
 
-                    {selectedBroker.id === 'xts' && (
-                      <div className="mt-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Redirect Url: ℹ️
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value="https://web.algorooms.com/connect-broker"
-                            readOnly
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                          />
-                          <button className="px-3 py-2 text-blue-600 hover:bg-blue-50 rounded">
-                            📋
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
                     <button
                       onClick={handleSubmit}
-                      className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium"
+                      disabled={isLoading}
+                      className={`w-full mt-6 ${isLoading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'} text-white py-3 rounded-lg font-medium`}
                     >
-                      Submit
+                      {isLoading ? 'Submitting...' : 'Submit'}
                     </button>
                   </div>
                 )}
