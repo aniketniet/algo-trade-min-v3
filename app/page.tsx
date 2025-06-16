@@ -35,7 +35,7 @@ import {
   Twitter,
   CodeXml,
   Facebook,
-  Instagram 
+  Instagram
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -105,7 +105,7 @@ export default function Home() {
               
             </div> */}
             {/* <span className="text-xl font-bold text-gray-900">Algo Tradex Mind</span> */}
-            <img src='/site-logo.png' alt="logo" className="flex items-center pt-5" width={170}/>
+            <img src='/site-logo.png' alt="logo" className="flex items-center pt-5" width={170} />
           </motion.div>
 
           {/* Desktop Navigation */}
@@ -227,61 +227,61 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-  initial={{ opacity: 0, x: 50 }}
-  animate={{ opacity: 1, x: 0 }}
-  transition={{ duration: 0.8, delay: 0.2 }}
-  style={{ y: heroY }}
-  className="relative w-full lg:max-w-xl mx-auto"
->
-  <div className="relative">
-    <div className="w-full rounded-2xl overflow-hidden">
-      <Image
-        src="/images/hero.jpg"
-        alt="Professional trader using Algo Tradex Mind"
-        width={600}
-        height={600}
-        className="rounded-2xl w-full h-auto"
-        priority
-      />
-    </div>
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              style={{ y: heroY }}
+              className="relative w-full lg:max-w-xl mx-auto"
+            >
+              <div className="relative">
+                <div className="w-full rounded-2xl overflow-hidden">
+                  <Image
+                    src="/images/hero.jpg"
+                    alt="Professional trader using Algo Tradex Mind"
+                    width={600}
+                    height={600}
+                    className="rounded-2xl w-full h-auto"
+                    priority
+                  />
+                </div>
 
-    {/* Bottom-left Card */}
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 1 }}
-      className="absolute bottom-2 left-2 sm:-bottom-6 sm:-left-6 bg-white rounded-xl shadow-lg p-4 border w-[160px]"
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-        <div>
-          <div className="text-sm font-semibold text-gray-900">Live Trading</div>
-          <div className="text-xs text-gray-600">+₹24,847 today</div>
-        </div>
-      </div>
-    </motion.div>
+                {/* Bottom-left Card */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1 }}
+                  className="absolute bottom-2 left-2 sm:-bottom-6 sm:-left-6 bg-white rounded-xl shadow-lg p-4 border w-[160px]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">Live Trading</div>
+                      <div className="text-xs text-gray-600">+₹24,847 today</div>
+                    </div>
+                  </div>
+                </motion.div>
 
-    {/* Top-right Card */}
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 1.2 }}
-      className="absolute top-2 right-2 sm:-top-6 sm:-right-6 bg-white rounded-xl shadow-lg p-4 border w-[160px]"
-    >
-      <div className="text-center">
-        <div className="text-2xl font-bold text-blue-600">99.7%</div>
-        <div className="text-xs text-gray-600">Execution Accuracy</div>
-      </div>
-    </motion.div>
-  </div>
-</motion.div>
+                {/* Top-right Card */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.2 }}
+                  className="absolute top-2 right-2 sm:-top-6 sm:-right-6 bg-white rounded-xl shadow-lg p-4 border w-[160px]"
+                >
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">99.7%</div>
+                    <div className="text-xs text-gray-600">Execution Accuracy</div>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
 
           </div>
         </div>
       </section>
 
       {/* What Is Algo Tradex Mind Section */}
-      <section className="py-20 sm:py-32 bg-gray-50">
+      <section className="py-5 sm:py-5 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -391,31 +391,31 @@ export default function Home() {
 
             {/* Visual Strategy Builder */}
             <motion.div
-  initial={{ opacity: 0, y: 50 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  viewport={{ once: true }}
-  className="grid gap-12 lg:grid-cols-2 lg:items-center"
->
-  {/* Text Section */}
-  <div className="lg:order-2">
-    <h3 className="mb-4 text-2xl font-bold text-gray-900">
-      Visual Strategy Builder (No Coding)
-    </h3>
-    <p className="mb-6 text-lg text-gray-600">
-      Build complex trading logic with simple clicks. If you can think of it, you can automate it.
-    </p>
-    <div className="flex items-center gap-2 text-green-600">
-      <Code className="h-5 w-5" />
-      <span className="font-semibold">No programming knowledge required</span>
-    </div>
-  </div>
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="grid gap-12 lg:grid-cols-2 lg:items-center"
+            >
+              {/* Text Section */}
+              <div className="lg:order-2">
+                <h3 className="mb-4 text-2xl font-bold text-gray-900">
+                  Visual Strategy Builder (No Coding)
+                </h3>
+                <p className="mb-6 text-lg text-gray-600">
+                  Build complex trading logic with simple clicks. If you can think of it, you can automate it.
+                </p>
+                <div className="flex items-center gap-2 text-green-600">
+                  <Code className="h-5 w-5" />
+                  <span className="font-semibold">No programming knowledge required</span>
+                </div>
+              </div>
 
-  {/* Visual Section with order-1 */}
-  <div className="lg:order-1 bg-gray-100 rounded-2xl p-8 text-center">
-    <CodeXml className="h-24 w-24 text-blue-600 mx-auto mb-4" />
-    <p className="text-gray-600">No-code builder interface</p>
-  </div>
-</motion.div>
+              {/* Visual Section with order-1 */}
+              <div className="lg:order-1 bg-gray-100 rounded-2xl p-8 text-center">
+                <CodeXml className="h-24 w-24 text-blue-600 mx-auto mb-4" />
+                <p className="text-gray-600">No-code builder interface</p>
+              </div>
+            </motion.div>
 
 
 
@@ -690,9 +690,9 @@ export default function Home() {
         </div>
       </section> */}
 
-      <Trainer/>
+      <Trainer />
 
-      <LogoSlider/>
+      <LogoSlider />
 
       {/* Pricing */}
       <section id="pricing" className="py-20 sm:py-32">
@@ -789,8 +789,8 @@ export default function Home() {
                   </ul>
                   <Button
                     className={`w-full ${plan.popular
-                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                        : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
                       }`}
                   >
                     {plan.title === "FREE PLAN" ? "Start Free" : "Start Free Trial"}
@@ -802,7 +802,7 @@ export default function Home() {
         </div>
       </section>
 
-      <WhyChooseUs/>
+      <WhyChooseUs />
 
       {/* Testimonials */}
       {/* <section className="py-20 sm:py-32 bg-gray-50">
@@ -873,7 +873,7 @@ export default function Home() {
         </div>
       </section> */}
 
-      <TestSwiper/>
+      <TestSwiper />
 
       {/* Insights & Articles */}
       <section className="py-20 sm:py-32">
@@ -1037,7 +1037,7 @@ export default function Home() {
                   <Bot className="h-5 w-5 text-white" />
                 </div> */}
                 {/* <span className="text-xl font-bold text-white">Algo Tradex Mind</span> */}
-                <img src='/logo-site1.png' alt="logo" className="flex items-center  text-white" width={170}/>
+                <img src='/logo-site1.png' alt="logo" className="flex items-center  text-white" width={170} />
               </motion.div>
               <p className="mb-6 max-w-md text-gray-400">
                 Built by Traders. For Traders. India's leading algorithmic trading platform that makes automation
@@ -1048,8 +1048,8 @@ export default function Home() {
                   { icon: Linkedin, label: "LinkedIn" },
                   { icon: Youtube, label: "YouTube" },
                   { icon: Twitter, label: "Twitter" },
-                  { icon:Facebook , label: "Facebook" },
-                  { icon:Instagram  , label: "Instagram" },
+                  { icon: Facebook, label: "Facebook" },
+                  { icon: Instagram, label: "Instagram" },
                 ].map((social, index) => (
                   <motion.div
                     key={index}
@@ -1078,19 +1078,19 @@ export default function Home() {
             <div>
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Docs</h3>
               <ul className="space-y-3">
-  {[
-    { label: "Terms of Use", path: "/term" },
-    { label: "Privacy Policy", path: "/policy" },
-    { label: "Refunds", path: "/refunds" },
-    { label: "Disclaimer", path: "/disclaimer" },
-  ].map(({ label, path }) => (
-    <li key={label}>
-      <Link href={path} className="hover:text-white transition-colors">
-        {label}
-      </Link>
-    </li>
-  ))}
-</ul>
+                {[
+                  { label: "Terms of Use", path: "/term" },
+                  { label: "Privacy Policy", path: "/policy" },
+                  { label: "Refunds", path: "/refunds" },
+                  { label: "Disclaimer", path: "/disclaimer" },
+                ].map(({ label, path }) => (
+                  <li key={label}>
+                    <Link href={path} className="hover:text-white transition-colors">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
 
             </div>
 
