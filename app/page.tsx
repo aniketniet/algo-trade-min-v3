@@ -47,6 +47,7 @@ import TestSwiper from "@/components/TestSwiper"
 import LogoSlider from "@/components/LogoSlider"
 import WhyChooseUs from "@/components/WhyChooseUs"
 import Trainer from "@/components/Trainer"
+import Header from "@/components/Header"
 
 // Animated Counter Component
 function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -83,7 +84,7 @@ function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; d
 }
 
 export default function Home() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  
   const { scrollYProgress } = useScroll()
   const heroRef = useRef(null)
 
@@ -92,79 +93,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
-      {/* Navigation */}
-      <motion.header
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="fixed top-0 z-50 w-full bg-white/95 backdrop-blur-lg border-b border-gray-100 shadow-sm"
-      >
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <motion.div className="flex items-center gap-2" whileHover={{ scale: 1.05 }}>
-            {/* <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-              <Bot className="h-5 w-5 text-white" />
-              
-            </div> */}
-            {/* <span className="text-xl font-bold text-gray-900">Algo Tradex Mind</span> */}
-            <img src='/site-logo.png' alt="logo" className="flex items-center pt-5" width={170} />
-          </motion.div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-8 md:flex">
-            {["Features", "Pricing", "About", "Contact"].map((item) => (
-              <motion.a
-                key={item}
-                href={`#${item.toLowerCase()}`}
-                className="text-sm font-medium text-gray-600 transition-colors hover:text-blue-600"
-                whileHover={{ y: -2 }}
-              >
-                {item}
-              </motion.a>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="hidden text-sm font-medium text-gray-600 hover:text-gray-900 sm:block">
-              Sign In
-            </Link>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link href="/login">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Start Free Now
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </motion.div>
-
-            {/* Mobile Menu Button */}
-            <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="md:hidden bg-white border-t border-gray-100 p-4"
-          >
-            <nav className="flex flex-col gap-4">
-              {["Features", "Pricing", "About", "Contact"].map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase()}`}
-                  className="text-gray-600 hover:text-blue-600"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item}
-                </a>
-              ))}
-            </nav>
-          </motion.div>
-        )}
-      </motion.header>
-
+     <Header />
+       
       {/* Hero Section */}
       <section ref={heroRef} className="pt-40 pb-20 sm:pb-32 bg-gradient-to-b from-blue-50 to-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -1022,99 +952,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 py-16 text-gray-300">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-5">
-            <div className="lg:col-span-2">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="mb-0 flex items-center gap-2"
-              >
-                {/* <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-                  <Bot className="h-5 w-5 text-white" />
-                </div> */}
-                {/* <span className="text-xl font-bold text-white">Algo Tradex Mind</span> */}
-                <img src='/logo-site1.png' alt="logo" className="flex items-center  text-white" width={170} />
-              </motion.div>
-              <p className="mb-6 max-w-md text-gray-400">
-                Built by Traders. For Traders. India's leading algorithmic trading platform that makes automation
-                accessible to everyone.
-              </p>
-              <div className="flex space-x-4">
-                {[
-                  { icon: Linkedin, label: "LinkedIn" },
-                  { icon: Youtube, label: "YouTube" },
-                  { icon: Twitter, label: "Twitter" },
-                  { icon: Facebook, label: "Facebook" },
-                  { icon: Instagram, label: "Instagram" },
-                ].map((social, index) => (
-                  <motion.div
-                    key={index}
-                    whileHover={{ scale: 1.1 }}
-                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors cursor-pointer"
-                  >
-                    <social.icon className="h-5 w-5 text-gray-400 hover:text-white" />
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Pages</h3>
-              <ul className="space-y-3">
-                {["Home", "Features", "Pricing", "Contact", "Blog", "Legal"].map((item) => (
-                  <li key={item}>
-                    <Link href="#" className="hover:text-white transition-colors">
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Docs</h3>
-              <ul className="space-y-3">
-                {[
-                  { label: "Terms of Use", path: "/term" },
-                  { label: "Privacy Policy", path: "/policy" },
-                  { label: "Refunds", path: "/refunds" },
-                  { label: "Disclaimer", path: "/disclaimer" },
-                ].map(({ label, path }) => (
-                  <li key={label}>
-                    <Link href={path} className="hover:text-white transition-colors">
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-
-            </div>
-
-            <div>
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">Connect</h3>
-              <ul className="space-y-3">
-                {["LinkedIn", "YouTube", "Twitter"].map((item) => (
-                  <li key={item}>
-                    <Link href="#" className="hover:text-white transition-colors">
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-12 border-t border-gray-800 pt-8">
-            <div className="flex flex-col items-center justify-center gap-4 text-center">
-              <p className="text-sm text-gray-500">© 2025 Algo Tradex Mind. Built by Traders. For Traders.</p>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
