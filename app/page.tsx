@@ -48,6 +48,7 @@ import LogoSlider from "@/components/LogoSlider"
 import WhyChooseUs from "@/components/WhyChooseUs"
 import Trainer from "@/components/Trainer"
 import Header from "@/components/Header"
+import Footer from "@/components/Footer"
 
 // Animated Counter Component
 function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
@@ -951,6 +952,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <Footer />
 
     </div>
   )

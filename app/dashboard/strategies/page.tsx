@@ -69,6 +69,7 @@ export default function AlgoroomStrategyPage() {
             <StrategyList strategies={strategies} loading={loading} />
           )}
 
+          
           {(activeTab === "Deployed Strategies" ||
             activeTab === "Strategy Template" ||
             activeTab === "My Portfolio") && (

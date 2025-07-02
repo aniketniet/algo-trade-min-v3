@@ -1,257 +1,255 @@
 import React, { useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock, Plus, Trash2, Info, X, Search } from "lucide-react";
+import InstrumentModal from "./createStraegy/InstrumentModel";
+import StrategyTypeSelector from "./createStraegy/StrategyType";
+import BasicConfiguration from "./createStraegy/BasicConfiguration";
+import TimeBasedStrategy from "./createStraegy/TimeBasedStrategy";
+import RiskManagement from "./createStraegy/RiskManagement";
+import IndicatorBasedStrategy from "./createStraegy/IndicatorBasedStrategy";
 
-const StrategyForm = ({ onSubmit }) => {
-  const [strategyName, setStrategyName] = useState("");
-  const [strategyType, setStrategyType] = useState("Long & Short");
-  const [orderType, setOrderType] = useState("MIS");
-  const [startTime, setStartTime] = useState("09:16");
-  const [endTime, setEndTime] = useState("15:15");
-  const [noTradeAfter, setNoTradeAfter] = useState("15:00");
-  const [profitTrailing, setProfitTrailing] = useState("No Trailing");
-  const [maxProfit, setMaxProfit] = useState(5000);
-  const [maxLoss, setMaxLoss] = useState(2000);
-  const [instruments, setInstruments] = useState(["NIFTY", "BANKNIFTY"]);
-  const [selectedDays, setSelectedDays] = useState(["MON", "TUE", "WED", "THU", "FRI"]);
+// Instruments Section Component
+const InstrumentsSection = ({ selectedInstruments, onAddInstruments }) => (
+  <div>
+    <h3 className="font-medium mb-4">Select Instruments</h3>
+    <div className="flex flex-wrap gap-2 mb-4">
+      {selectedInstruments.map((instrument) => (
+        <span
+          key={instrument}
+          className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+        >
+          {instrument}
+        </span>
+      ))}
+    </div>
+    <button
+      type="button"
+      onClick={onAddInstruments}
+      className="w-48 h-24 border-2 border-dashed border-blue-300 rounded-lg flex flex-col items-center justify-center text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+    >
+      <Plus className="w-6 h-6 mb-1" />
+      <span className="text-sm font-medium">Add Instruments</span>
+    </button>
+  </div>
+);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const strategyData = {
-      strategyName,
-      strategyType,
-      instruments,
-      orderType,
-      startTime,
-      squareOffTime: endTime,
-      noTradeAfter,
-      orderLegs: [
-        {
-          legName: "Buy if EMA 20 > EMA 50",
-          conditions: [{ indicator: "EMA", operator: ">", value: 50 }],
-          action: "BUY",
-        },
-      ],
-      riskManagement: {
-        maxProfit,
-        maxLoss,
-      },
-      profitTrailing,
-      trailingConfig: {
-        lockAmount: 1500,
-        trailStep: 100,
-      },
-    };
-
-    onSubmit(strategyData);
-  };
-
-  const toggleDay = (day) => {
-    setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
-  };
-
-  const days = ["MON", "TUE", "WED", "THU", "FRI"];
+// Profit Trailing Component
+const ProfitTrailing = ({ formData, onInputChange }) => {
+  const profitTrailingOptions = [
+    "No Trailing",
+    "Lock Fix Profit",
+    "Trail Profit",
+    "Lock and Trail",
+  ];
 
   return (
-    <div className="max-w-4xl">
-      <form onSubmit={handleSubmit}>
-        {/* Strategy Type */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-4">Strategy Type</h2>
-          <div className="flex gap-4">
-            {["Long & Short", "Long Only", "Short Only"].map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => setStrategyType(type)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  strategyType === type
-                    ? "bg-blue-100 text-blue-700 border border-blue-200"
-                    : "bg-gray-100 text-gray-600 border border-gray-200"
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Order Configuration */}
-        <div className="grid grid-cols-2 gap-8 mb-8">
-          <div>
-            <h3 className="font-medium mb-4">Order Type</h3>
-            <div className="flex gap-4">
-              {["MIS", "CNC", "BTST"].map((type) => (
-                <label
-                  key={type}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <input
-                    type="radio"
-                    name="orderType"
-                    value={type}
-                    checked={orderType === type}
-                    onChange={(e) => setOrderType(e.target.value)}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <span className="text-sm">{type}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-medium mb-4">Timing</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Start time
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Square off
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Trading Days */}
-        <div className="mb-8">
-          <h3 className="font-medium mb-4">Trading Days</h3>
-          <div className="flex gap-2">
-            {days.map((day) => (
-              <button
-                key={day}
-                type="button"
-                onClick={() => toggleDay(day)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  selectedDays.includes(day)
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {day}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Risk Management */}
-        <div className="mb-8 border-t border-gray-200 pt-6">
-          <h2 className="text-lg font-semibold mb-6">Risk management</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Max Profit (₹)
-              </label>
-              <input
-                type="number"
-                value={maxProfit}
-                onChange={(e) => setMaxProfit(Number(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Max Loss (₹)
-              </label>
-              <input
-                type="number"
-                value={maxLoss}
-                onChange={(e) => setMaxLoss(Number(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                No Trade After
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="time"
-                  value={noTradeAfter}
-                  onChange={(e) => setNoTradeAfter(e.target.value)}
-                  className="px-3 py-2 border border-blue-500 rounded-lg text-sm flex-1"
-                />
-                <Clock className="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Profit Trailing */}
-        <div className="mb-8 border-t border-gray-200 pt-6">
-          <h2 className="text-lg font-semibold mb-4">Profit Trailing</h2>
-          <div className="flex gap-6">
-            {[
-              "No Trailing",
-              "Lock Fix Profit",
-              "Trail Profit",
-              "Lock and Trail",
-            ].map((option) => (
-              <label
-                key={option}
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name="profitTrailing"
-                  value={option}
-                  checked={profitTrailing === option}
-                  onChange={(e) => setProfitTrailing(e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">{option}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Strategy Name and Save */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 mr-4">
-              <input
-                type="text"
-                placeholder="Strategy name"
-                value={strategyName}
-                onChange={(e) => setStrategyName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                className="px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Save & Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      </form>
+    <div className="border border-gray-200 rounded-lg p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <h3 className="text-lg font-semibold">Profit Trailing</h3>
+        <Info className="w-4 h-4 text-gray-400" />
+      </div>
+      <div className="flex gap-6">
+        {profitTrailingOptions.map((option) => (
+          <label
+            key={option}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="profitTrailing"
+              value={option}
+              checked={formData.profitTrailing === option}
+              onChange={(e) => onInputChange("profitTrailing", e.target.value)}
+              className="w-4 h-4 text-blue-600"
+            />
+            <span className="text-sm">{option}</span>
+          </label>
+        ))}
+      </div>
     </div>
   );
 };
 
-export default StrategyForm;
+// Strategy Name and Save Component
+const StrategyNameAndSave = ({ formData, onInputChange, onSubmit }) => (
+  <div className="border border-gray-200 rounded-lg p-6">
+    <div className="flex items-center gap-4">
+      <input
+        type="text"
+        placeholder="Strategy name"
+        value={formData.strategyName}
+        onChange={(e) => onInputChange("strategyName", e.target.value)}
+        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      />
+      <button type="button" className="text-gray-400 hover:text-gray-600">
+        <Info className="w-5 h-5" />
+      </button>
+      <button
+        type="button"
+        onClick={onSubmit}
+        className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+      >
+        Save & Continue
+      </button>
+    </div>
+  </div>
+);
+
+// Main Strategy Creator Component
+const StrategyCreator = () => {
+  const [strategyType, setStrategyType] = useState("Time Based");
+  const [isInstrumentModalOpen, setIsInstrumentModalOpen] = useState(false);
+  const [selectedInstruments, setSelectedInstruments] = useState([]);
+  const [formData, setFormData] = useState({
+    // Basic Configuration
+    orderType: "MIS",
+    startTime: "09:16",
+    squareOff: "03:15",
+    selectedDays: ["MON", "TUE", "WED", "THU", "FRI"],
+
+    // Time Based Fields
+    transactionType: "Both Side",
+    chartType: "Candle",
+    interval: "5 Min",
+
+    // Indicator Based Fields
+    longEntryConditions: [{ indicator: "", comparator: "", value: "" }],
+    shortEntryConditions: [{ indicator: "", comparator: "", value: "" }],
+    exitConditions: [],
+    useCombinedChart: false,
+
+    // Risk Management
+    maxProfit: "",
+    maxLoss: "",
+    noTradeAfter: "03:15",
+    maxTradeCycle: "1",
+
+    // Profit Trailing
+    profitTrailing: "No Trailing",
+
+    // Strategy Name
+    strategyName: "",
+  });
+
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleDay = (day) => {
+    setFormData((prev) => ({
+      ...prev,
+      selectedDays: prev.selectedDays.includes(day)
+        ? prev.selectedDays.filter((d) => d !== day)
+        : [...prev.selectedDays, day],
+    }));
+  };
+
+  const addCondition = (type) => {
+    const newCondition = { indicator: "", comparator: "", value: "" };
+    setFormData((prev) => ({
+      ...prev,
+      [type]: [...prev[type], newCondition],
+    }));
+  };
+
+  const removeCondition = (type, index) => {
+    setFormData((prev) => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateCondition = (type, index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [type]: prev[type].map((condition, i) =>
+        i === index ? { ...condition, [field]: value } : condition
+      ),
+    }));
+  };
+
+  const handleSubmit = () => {
+    console.log("Strategy Data:", {
+      strategyType,
+      selectedInstruments,
+      ...formData,
+    });
+    // Here you can add API call to save the strategy
+  };
+
+  const handleSelectInstruments = (instruments) => {
+    setSelectedInstruments(instruments);
+  };
+
+  return (
+    <>
+      <div className="max-w-6xl mx-auto p-6 bg-white">
+        <div className="space-y-8">
+          {/* Strategy Type */}
+          <StrategyTypeSelector
+            strategyType={strategyType}
+            onStrategyTypeChange={setStrategyType}
+          />
+
+          {/* Select Instruments */}
+          <InstrumentsSection
+            selectedInstruments={selectedInstruments}
+            onAddInstruments={() => setIsInstrumentModalOpen(true)}
+          />
+
+          {/* Basic Configuration Row */}
+          <BasicConfiguration
+            formData={formData}
+            onInputChange={handleInputChange}
+            onToggleDay={toggleDay}
+          />
+
+          {/* Conditional Content Based on Strategy Type */}
+          {strategyType === "Time Based" && (
+            <TimeBasedStrategy
+              formData={formData}
+              onInputChange={handleInputChange}
+            />
+          )}
+
+          {strategyType === "Indicator Based" && (
+            <IndicatorBasedStrategy
+              formData={formData}
+              onInputChange={handleInputChange}
+              onAddCondition={addCondition}
+              onRemoveCondition={removeCondition}
+              onUpdateCondition={updateCondition}
+            />
+          )}
+
+          {/* Risk Management */}
+          <RiskManagement
+            formData={formData}
+            onInputChange={handleInputChange}
+          />
+
+          {/* Profit Trailing */}
+          <ProfitTrailing
+            formData={formData}
+            onInputChange={handleInputChange}
+          />
+
+          {/* Strategy Name and Save */}
+          <StrategyNameAndSave
+            formData={formData}
+            onInputChange={handleInputChange}
+            onSubmit={handleSubmit}
+          />
+        </div>
+      </div>
+
+      {/* Instrument Selection Modal */}
+      <InstrumentModal
+        isOpen={isInstrumentModalOpen}
+        onClose={() => setIsInstrumentModalOpen(false)}
+        onSelectInstruments={handleSelectInstruments}
+      />
+    </>
+  );
+};
+
+export default StrategyCreator;
