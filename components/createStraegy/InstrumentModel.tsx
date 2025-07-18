@@ -10,7 +10,7 @@ const InstrumentModal = ({ isOpen, onClose, onSelectInstruments }) => {
   const categories = ["Options", "Equity", "Futures", "Indices", "CDS", "MCX"];
   
   const instruments = {
-    Options: ["NIFTY 50", "NIFTY BANK", "NIFTY FIN SERVICE", "SENSEX"],
+    Options: ["NIFTY50", "NIFTYBANK", "NIFTYFIN SERVICE", "SENSEX"],
     Equity: ["RELIANCE", "TCS", "HDFC BANK", "INFOSYS", "ICICI BANK"],
     Futures: ["NIFTY FUT", "BANKNIFTY FUT", "CRUDE OIL", "GOLD"],
     Indices: ["NIFTY 50", "SENSEX", "NIFTY BANK", "NIFTY IT"],

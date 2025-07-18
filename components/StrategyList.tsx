@@ -1,9 +1,17 @@
 import React from "react";
 import { Target, Play, Pause, TrendingDown } from "lucide-react";
+import { useStrategiesList } from "@/hooks/useStrategyApi";
 
-const StrategyList = ({ strategies, loading }) => {
+
+const StrategyList = () => {
+  const { strategies, loading, error } = useStrategiesList();
+
   if (loading) {
     return <div className="text-center py-8">Loading strategies...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-500">{error}</div>;
   }
 
   if (!strategies || strategies.length === 0) {
@@ -78,11 +86,11 @@ const StrategyList = ({ strategies, loading }) => {
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600">Max Profit</p>
-                  <p className="font-semibold">₹{strategy.riskManagement.maxProfit}</p>
+                  <p className="font-semibold">₹{strategy.riskManagement.exitWhenProfit}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Max Loss</p>
-                  <p className="font-semibold">₹{strategy.riskManagement.maxLoss}</p>
+                  <p className="font-semibold">₹{strategy.riskManagement.exitWhenLoss}</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -104,7 +112,7 @@ const StrategyList = ({ strategies, loading }) => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Version</p>
-                  <p className="text-sm text-gray-500">{strategy.version}</p>
+                  <p className="text-sm text-gray-500">{strategy.__v}</p>
                 </div>
               </div>
             </div>

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// components/StrategyCreator.tsx
+import React, { useEffect, useState } from "react";
 import { Clock, Plus, Trash2, Info, X, Search } from "lucide-react";
 import InstrumentModal from "./createStraegy/InstrumentModel";
 import StrategyTypeSelector from "./createStraegy/StrategyType";
@@ -6,71 +7,56 @@ import BasicConfiguration from "./createStraegy/BasicConfiguration";
 import TimeBasedStrategy from "./createStraegy/TimeBasedStrategy";
 import RiskManagement from "./createStraegy/RiskManagement";
 import IndicatorBasedStrategy from "./createStraegy/IndicatorBasedStrategy";
+import ProfitTrailing from "./createStraegy/ProfitTrailing";
 
-// Instruments Section Component
-const InstrumentsSection = ({ selectedInstruments, onAddInstruments }) => (
+
+import { FormData, OrderLeg, InstrumentsSectionProps, StrategyNameAndSaveProps, Day } from "../types/strategyTypes";
+import { useStrategyApi } from "@/hooks/useStrategyApi";
+import { useRouter } from "next/navigation";
+
+const InstrumentsSection: React.FC<InstrumentsSectionProps> = ({
+  selectedInstruments,
+  onAddInstruments,
+  onRemoveInstrument,
+}) => (
   <div>
     <h3 className="font-medium mb-4">Select Instruments</h3>
-    <div className="flex flex-wrap gap-2 mb-4">
-      {selectedInstruments.map((instrument) => (
-        <span
-          key={instrument}
-          className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
-        >
-          {instrument}
-        </span>
-      ))}
-    </div>
-    <button
-      type="button"
-      onClick={onAddInstruments}
-      className="w-48 h-24 border-2 border-dashed border-blue-300 rounded-lg flex flex-col items-center justify-center text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-colors"
-    >
-      <Plus className="w-6 h-6 mb-1" />
-      <span className="text-sm font-medium">Add Instruments</span>
-    </button>
+    {selectedInstruments.length > 0 ? (
+      <div className="flex flex-wrap gap-2">
+        {selectedInstruments.map((instrument) => (
+          <div
+            key={instrument}
+            className="flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+          >
+            {instrument}
+            <button
+              onClick={() => onRemoveInstrument(instrument)}
+              className="ml-2 text-blue-600 hover:text-blue-800"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <button
+        type="button"
+        onClick={onAddInstruments}
+        className="w-48 h-24 border-2 border-dashed border-blue-300 rounded-lg flex flex-col items-center justify-center text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+      >
+        <Plus className="w-6 h-6 mb-1" />
+        <span className="text-sm font-medium">Add Instruments</span>
+      </button>
+    )}
   </div>
 );
 
-// Profit Trailing Component
-const ProfitTrailing = ({ formData, onInputChange }) => {
-  const profitTrailingOptions = [
-    "No Trailing",
-    "Lock Fix Profit",
-    "Trail Profit",
-    "Lock and Trail",
-  ];
-
-  return (
-    <div className="border border-gray-200 rounded-lg p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-semibold">Profit Trailing</h3>
-        <Info className="w-4 h-4 text-gray-400" />
-      </div>
-      <div className="flex gap-6">
-        {profitTrailingOptions.map((option) => (
-          <label
-            key={option}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <input
-              type="radio"
-              name="profitTrailing"
-              value={option}
-              checked={formData.profitTrailing === option}
-              onChange={(e) => onInputChange("profitTrailing", e.target.value)}
-              className="w-4 h-4 text-blue-600"
-            />
-            <span className="text-sm">{option}</span>
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Strategy Name and Save Component
-const StrategyNameAndSave = ({ formData, onInputChange, onSubmit }) => (
+const StrategyNameAndSave: React.FC<StrategyNameAndSaveProps> = ({
+  formData,
+  onInputChange,
+  onSubmit,
+  isSubmitting,
+}) => (
   <div className="border border-gray-200 rounded-lg p-6">
     <div className="flex items-center gap-4">
       <input
@@ -86,55 +72,61 @@ const StrategyNameAndSave = ({ formData, onInputChange, onSubmit }) => (
       <button
         type="button"
         onClick={onSubmit}
-        className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+        disabled={isSubmitting}
+        className={`bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors ${
+          isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
       >
-        Save & Continue
+        {isSubmitting ? 'Saving...' : 'Save & Continue'}
       </button>
     </div>
   </div>
 );
 
-// Main Strategy Creator Component
-const StrategyCreator = () => {
-  const [strategyType, setStrategyType] = useState("Time Based");
+const StrategyCreator: React.FC = () => {
+  const [strategyType, setStrategyType] = useState<"Time Based" | "Indicator Based">("Time Based");
   const [isInstrumentModalOpen, setIsInstrumentModalOpen] = useState(false);
-  const [selectedInstruments, setSelectedInstruments] = useState([]);
-  const [formData, setFormData] = useState({
-    // Basic Configuration
+  const [selectedInstruments, setSelectedInstruments] = useState<string[]>([]);
+  const [orderLegs, setOrderLegs] = useState<OrderLeg[]>([]);
+   const router = useRouter();
+  const { saveStrategyData, isLoading, error, resetError } = useStrategyApi();
+
+
+  
+  // useEffect(() => {
+  //   // Check authentication on component mount
+  //   const token = localStorage.getItem('token');
+  //   if (!token) {
+  //     router.push('/login');
+  //   }
+  // }, [router]);
+
+  const [formData, setFormData] = useState<FormData>({
+    strategyName: "",
     orderType: "MIS",
     startTime: "09:16",
     squareOff: "03:15",
+    noTradeAfter: "03:15",
     selectedDays: ["MON", "TUE", "WED", "THU", "FRI"],
-
-    // Time Based Fields
+    maxProfit: 5000,
+    maxLoss: 3000,
+    profitTrailing: "No Trailing",
+    trailingConfig: {},
     transactionType: "Both Side",
     chartType: "Candle",
     interval: "5 Min",
-
-    // Indicator Based Fields
     longEntryConditions: [{ indicator: "", comparator: "", value: "" }],
     shortEntryConditions: [{ indicator: "", comparator: "", value: "" }],
     exitConditions: [],
     useCombinedChart: false,
-
-    // Risk Management
-    maxProfit: "",
-    maxLoss: "",
-    noTradeAfter: "03:15",
     maxTradeCycle: "1",
-
-    // Profit Trailing
-    profitTrailing: "No Trailing",
-
-    // Strategy Name
-    strategyName: "",
   });
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleDay = (day) => {
+  const toggleDay = (day: Day) => {
     setFormData((prev) => ({
       ...prev,
       selectedDays: prev.selectedDays.includes(day)
@@ -143,71 +135,133 @@ const StrategyCreator = () => {
     }));
   };
 
-  const addCondition = (type) => {
-    const newCondition = { indicator: "", comparator: "", value: "" };
-    setFormData((prev) => ({
-      ...prev,
-      [type]: [...prev[type], newCondition],
-    }));
+  const handleRemoveInstrument = (instrumentToRemove: string) => {
+    setSelectedInstruments((prev) =>
+      prev.filter((instrument) => instrument !== instrumentToRemove)
+    );
   };
 
-  const removeCondition = (type, index) => {
-    setFormData((prev) => ({
-      ...prev,
-      [type]: prev[type].filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateCondition = (type, index, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [type]: prev[type].map((condition, i) =>
-        i === index ? { ...condition, [field]: value } : condition
-      ),
-    }));
-  };
-
-  const handleSubmit = () => {
-    console.log("Strategy Data:", {
-      strategyType,
-      selectedInstruments,
-      ...formData,
-    });
-    // Here you can add API call to save the strategy
-  };
-
-  const handleSelectInstruments = (instruments) => {
+  const handleSelectInstruments = (instruments: string[]) => {
     setSelectedInstruments(instruments);
   };
+
+  const handleTimeBasedStrategyData = (legs: OrderLeg[]) => {
+    setOrderLegs(legs);
+  };
+
+const handleSubmit = async () => {
+  if (!formData.strategyName) {
+    alert("Please enter a strategy name");
+    return;
+  }
+
+  if (selectedInstruments.length === 0) {
+    alert("Please select at least one instrument");
+    return;
+  }
+
+  if (strategyType === "Time Based" && orderLegs.length === 0) {
+    alert("Please add at least one order leg");
+    return;
+  }
+
+  // Transform the payload to match the desired structure
+  const payload = {
+    strategyName: formData.strategyName,
+    strategyType: strategyType,
+    instruments: selectedInstruments,
+    orderType: formData.orderType,
+    startTime: formData.startTime,
+    squareOffTime: formData.squareOff,
+    noTradeAfter: formData.noTradeAfter,
+    tradeDays: formData.selectedDays,
+    riskManagement: {
+      exitWhenProfit: Number(formData.maxProfit),
+      exitWhenLoss: Number(formData.maxLoss),
+    },
+    profitTrailing: formData.profitTrailing,
+    trailingConfig: {
+      lockProfitAt: formData.trailingConfig?.lockProfitAt || 0,
+      trailProfitBy: formData.trailingConfig?.trailProfitBy || 0,
+      everyIncrease: formData.trailingConfig?.everyIncrease || 0,
+    },
+    legs: orderLegs.map(leg => ({
+      orderType: leg.orderType,
+      optionType: leg.optionType,
+      expiryType: leg.expiryType,
+      quantity: leg.quantity,
+      strikeType: leg.strikeType,
+      strikeValue: leg.strikeValue,
+      stopLoss: {
+        type: leg.stopLoss?.type || "points",
+        value: leg.stopLoss?.value || 0,
+        trigger: leg.stopLoss?.trigger || "price"
+      },
+      target: {
+        type: leg.target?.type || "points",
+        value: leg.target?.value || 0,
+        trigger: leg.target?.trigger || "price"
+      }
+    }))
+  };
+
+  if (strategyType === "Indicator Based") {
+    payload.longEntryConditions = formData.longEntryConditions;
+    payload.shortEntryConditions = formData.shortEntryConditions;
+    payload.exitConditions = formData.exitConditions;
+    payload.useCombinedChart = formData.useCombinedChart;
+  }
+
+  try {
+    await saveStrategyData(payload);
+    alert('Strategy saved successfully!');
+    // Reset form after successful save
+    router.push({
+      pathname: '/strategies',
+      query: { success: 'true' }
+    });
+    setFormData({
+      ...formData,
+      strategyName: "",
+    });
+    setSelectedInstruments([]);
+    setOrderLegs([]);
+  } catch (error) {
+    // Error is already handled by the hook
+  }
+};
 
   return (
     <>
       <div className="max-w-6xl mx-auto p-6 bg-white">
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+        
         <div className="space-y-8">
-          {/* Strategy Type */}
           <StrategyTypeSelector
             strategyType={strategyType}
             onStrategyTypeChange={setStrategyType}
           />
 
-          {/* Select Instruments */}
           <InstrumentsSection
             selectedInstruments={selectedInstruments}
             onAddInstruments={() => setIsInstrumentModalOpen(true)}
+            onRemoveInstrument={handleRemoveInstrument}
           />
 
-          {/* Basic Configuration Row */}
           <BasicConfiguration
             formData={formData}
             onInputChange={handleInputChange}
             onToggleDay={toggleDay}
           />
 
-          {/* Conditional Content Based on Strategy Type */}
           {strategyType === "Time Based" && (
             <TimeBasedStrategy
-              formData={formData}
-              onInputChange={handleInputChange}
+              selectedInstruments={selectedInstruments}
+              onStrategyDataChange={handleTimeBasedStrategyData}
             />
           )}
 
@@ -215,38 +269,33 @@ const StrategyCreator = () => {
             <IndicatorBasedStrategy
               formData={formData}
               onInputChange={handleInputChange}
-              onAddCondition={addCondition}
-              onRemoveCondition={removeCondition}
-              onUpdateCondition={updateCondition}
             />
           )}
 
-          {/* Risk Management */}
           <RiskManagement
             formData={formData}
             onInputChange={handleInputChange}
           />
 
-          {/* Profit Trailing */}
           <ProfitTrailing
             formData={formData}
             onInputChange={handleInputChange}
           />
 
-          {/* Strategy Name and Save */}
           <StrategyNameAndSave
             formData={formData}
             onInputChange={handleInputChange}
             onSubmit={handleSubmit}
+            isSubmitting={isLoading}
           />
         </div>
       </div>
 
-      {/* Instrument Selection Modal */}
       <InstrumentModal
         isOpen={isInstrumentModalOpen}
         onClose={() => setIsInstrumentModalOpen(false)}
         onSelectInstruments={handleSelectInstruments}
+        initiallySelected={selectedInstruments}
       />
     </>
   );
