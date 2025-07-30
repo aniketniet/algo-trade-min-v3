@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const register = async (data: { username: string; email: string; password: string }) => {
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`, data);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL}/auth/register`, data);
       const { user: userData, token } = res.data;
       
       // Store token in cookie (secure, httpOnly options would be server-side)
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (data: { email: string; password: string }) => {
     try {
-      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, data);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL}/auth/login`, data);
       const { user: userData, token } = res.data;
       
       // Store token in cookie

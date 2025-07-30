@@ -1,41 +1,76 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import { Target, Play, Pause, TrendingDown } from "lucide-react";
 import { useStrategiesList } from "@/hooks/useStrategyApi";
-
+import axios from "axios";
+import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
 const StrategyList = () => {
   const { strategies, loading, error } = useStrategiesList();
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const router = useRouter();
 
-  if (loading) {
-    return <div className="text-center py-8">Loading strategies...</div>;
-  }
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || "http://103.189.173.82:4000/api";
 
-  if (error) {
-    return <div className="text-center py-8 text-red-500">{error}</div>;
-  }
+  const handleBacktestClick = (strategyId: string) => {
+    setOpenDropdownId((prev) => (prev === strategyId ? null : strategyId));
+  };
 
-  if (!strategies || strategies.length === 0) {
-    return <div className="text-center py-8">No strategies found</div>;
-  }
+  const handleNavigateToBacktestPage = (strategyId: string) => {
+   router.push(`/dashboard/backtest?strategyId=${strategyId}`);
+  };
+
+  const runBacktest = async (strategyId: string, period: string) => {
+    try {
+      const token = Cookies.get("token");
+
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
+
+      setLoadingId(strategyId);
+
+      await axios.post(
+        `${API_BASE_URL}/user/backtest/${strategyId}`,
+        { period },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      alert(`Backtest started for ${period}`);
+      router.push(`/dashboard/backtest?strategyId=${strategyId}`);
+    } catch (err: any) {
+      alert("Error running backtest: " + (err?.response?.data?.message || err.message));
+    } finally {
+      setLoadingId(null);
+      setOpenDropdownId(null);
+    }
+  };
+
+  if (loading) return <div className="text-center py-8">Loading strategies...</div>;
+  if (error) return <div className="text-center py-8 text-red-500">{error}</div>;
+  if (!strategies || strategies.length === 0) return <div className="text-center py-8">No strategies found</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">My Trading Strategies</h1>
-          <p className="text-gray-600">
-            Manage and monitor your algorithmic trading strategies
-          </p>
+          <p className="text-gray-600">Manage and monitor your algorithmic trading strategies</p>
         </div>
       </div>
 
-      {/* Strategies List */}
       <div className="space-y-4">
-        {strategies.map((strategy) => (
-          <div
-            key={strategy._id}
-            className="bg-white rounded-lg border border-gray-200 p-6"
-          >
+        {strategies.map((strategy) => {
+          const isBacktested = strategy.status === "backtested";
+
+          const cardContent = (
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -48,7 +83,7 @@ const StrategyList = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col items-end gap-2 relative">
                 <span
                   className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${
                     strategy.status === "active"
@@ -67,9 +102,38 @@ const StrategyList = () => {
                   )}
                   {strategy.status}
                 </span>
+
+                {/* Show Backtest button only if NOT backtested */}
+                {!isBacktested && (
+                  <div className="relative">
+                    <button
+                      className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                      onClick={() => handleBacktestClick(strategy._id)}
+                    >
+                      {loadingId === strategy._id ? "Processing..." : "Backtest"}
+                    </button>
+
+                    {/* Dropdown */}
+                    {openDropdownId === strategy._id && (
+                      <div className="absolute right-0 mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-32">
+                        {["1m", "3m", "6m"].map((period) => (
+                          <button
+                            key={period}
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                            onClick={() => runBacktest(strategy._id, period)}
+                          >
+                            {period}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
+          );
 
+          const cardDetails = (
             <div className="grid gap-4 md:grid-cols-4">
               <div className="space-y-3">
                 <div>
@@ -116,8 +180,24 @@ const StrategyList = () => {
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+
+          return isBacktested ? (
+            <div
+              key={strategy._id}
+              className="bg-white rounded-lg border border-gray-200 p-6 cursor-pointer hover:shadow-md transition"
+              onClick={() => handleNavigateToBacktestPage(strategy._id)}
+            >
+              {cardContent}
+              {cardDetails}
+            </div>
+          ) : (
+            <div key={strategy._id} className="bg-white rounded-lg border border-gray-200 p-6">
+              {cardContent}
+              {cardDetails}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

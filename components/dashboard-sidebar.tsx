@@ -16,6 +16,7 @@ import {
   TestTube,
   TrendingUp,
   Youtube,
+  BarChart
 } from "lucide-react"
 import Link from "next/link"
 import React, { useState } from "react"
@@ -28,8 +29,9 @@ const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: <TrendingUp /> },
   { href: "/dashboard/brokers", label: "Brokers", icon: <Activity /> },
   { href: "/dashboard/strategies", label: "Strategies", icon: <Target /> },
-  { href: "/dashboard/backtest", label: "Backtest", icon: <TestTube /> },
+  // { href: "/dashboard/backtest", label: "Backtest", icon: <TestTube /> },
   { href: "/dashboard/reports", label: "Reports", icon: <FileText /> },
+  { href: "/dashboard/trading", label: "Trading", icon: <BarChart /> },
 //   { href: "#", label: "Calendar", icon: <Calendar /> },
 //   { href: "#", label: "Messages", icon: <MessageSquare /> },
 //   { href: "#", label: "Settings", icon: <Settings /> },
@@ -150,6 +152,7 @@ const DashboardSidebar = () => {
     <div>
       {/* Desktop Sidebar */}
       <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white md:flex h-full">
+        
         <div className="flex h-20 items-center justify-center border-b border-gray-200 px-6 ">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold">
             {/* <TrendingUp className="h-6 w-6 text-blue-600" /> */}
@@ -169,7 +172,7 @@ const DashboardSidebar = () => {
         {renderHelpDesk()}
         {/* {renderSocialLinks()} */}
         </nav>
-        <div className="border-t border-gray-200 p-4">
+        {/* <div className="border-t border-gray-200 p-4">
           <Link
             href="/"
             className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -177,11 +180,11 @@ const DashboardSidebar = () => {
             <LogOut className="mr-3 h-5 w-5 text-gray-500" />
             Logout
           </Link>
-        </div>
+        </div> */}
       </aside>
 
       {/* Mobile Sidebar */}
-      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+      {/* <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         <SheetTrigger asChild className="md:hidden">
           <Button variant="ghost" size="icon" className="flex md:hidden">
             <Menu className="h-10 w-10" />
@@ -209,7 +212,7 @@ const DashboardSidebar = () => {
             </Link>
           </div>
         </SheetContent>
-      </Sheet>
+      </Sheet> */}
     </div>
   )
 }

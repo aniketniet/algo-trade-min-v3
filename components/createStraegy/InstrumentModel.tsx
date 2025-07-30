@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { Clock, Plus, Trash2, Info, X, Search } from "lucide-react";
+import { X, Search } from "lucide-react";
 
 // Modal Component for Instrument Selection
 const InstrumentModal = ({ isOpen, onClose, onSelectInstruments }) => {
   const [selectedCategory, setSelectedCategory] = useState("Options");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedInstruments, setSelectedInstruments] = useState([]);
+  const [selectedInstruments, setSelectedInstruments] = useState(["NIFTY50"]);
 
   const categories = ["Options", "Equity", "Futures", "Indices", "CDS", "MCX"];
-  
+
   const instruments = {
     Options: ["NIFTY50", "NIFTYBANK", "NIFTYFIN SERVICE", "SENSEX"],
     Equity: ["RELIANCE", "TCS", "HDFC BANK", "INFOSYS", "ICICI BANK"],
@@ -18,15 +18,14 @@ const InstrumentModal = ({ isOpen, onClose, onSelectInstruments }) => {
     MCX: ["GOLD", "SILVER", "CRUDE OIL", "COPPER"]
   };
 
-  const filteredInstruments = instruments[selectedCategory]?.filter(instrument =>
-    instrument.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
-
+  const filteredInstruments =
+    instruments[selectedCategory]?.filter((instrument) =>
+      instrument.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
 
   const handleConfirm = () => {
     onSelectInstruments(selectedInstruments);
     onClose();
-    setSelectedInstruments([]);
     setSearchTerm("");
   };
 
@@ -35,6 +34,7 @@ const InstrumentModal = ({ isOpen, onClose, onSelectInstruments }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[80vh] overflow-hidden">
+        {/* Header */}
         <div className="p-6 border-b">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Select Instruments</h2>
@@ -42,7 +42,7 @@ const InstrumentModal = ({ isOpen, onClose, onSelectInstruments }) => {
               <X className="w-6 h-6" />
             </button>
           </div>
-          
+
           {/* Search */}
           <div className="relative mb-4">
             <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
@@ -57,44 +57,62 @@ const InstrumentModal = ({ isOpen, onClose, onSelectInstruments }) => {
 
           {/* Categories */}
           <div className="flex gap-2 mb-4 flex-wrap">
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                  selectedCategory === category
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+            {categories.map((category) => {
+              const isDisabled = category !== "Options";
+              return (
+                <button
+                  key={category}
+                  onClick={() => !isDisabled && setSelectedCategory(category)}
+                  disabled={isDisabled}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    selectedCategory === category
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {category}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Instruments List */}
+        {/* Instruments */}
         <div className="p-6 max-h-96 overflow-y-auto">
           <div className="space-y-2">
-            {filteredInstruments.map(instrument => (
-                <label key={instrument} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                    <input
-                        type="radio"
-                        name="instrument"
-                        checked={selectedInstruments.includes(instrument)}
-                        onChange={() => setSelectedInstruments([instrument])}
-                        className="w-4 h-4 text-blue-600"
-                    />
-                    <span className="text-sm">{instrument}</span>
+            {filteredInstruments.map((instrument) => {
+              const isEnabled =
+                selectedCategory === "Options" && instrument === "NIFTY50";
+              const isChecked = selectedInstruments.includes(instrument);
+
+              return (
+                <label
+                  key={instrument}
+                  className={`flex items-center gap-3 p-2 rounded cursor-pointer ${
+                    !isEnabled ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-50"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="instrument"
+                    checked={isChecked}
+                    disabled={!isEnabled}
+                    onChange={() => {
+                      if (isEnabled) setSelectedInstruments([instrument]);
+                    }}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm">{instrument}</span>
                 </label>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {/* Footer */}
         <div className="p-6 border-t flex justify-between items-center">
           <span className="text-sm text-gray-600">
-            {selectedInstruments.length} instruments selected
+            {selectedInstruments.length} instrument selected
           </span>
           <div className="flex gap-3">
             <button

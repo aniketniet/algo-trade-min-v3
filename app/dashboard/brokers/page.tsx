@@ -20,11 +20,41 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Badge } from "@/components/ui/badge";
-
 import BrokerModal from "@/components/broker-modal";
 
+import axios from "axios";
+// @ts-ignore
+import Cookies from "js-cookie";
+import { useState } from "react";
+
 export default function BrokersPage() {
-  // const [isAddBrokerOpen, setIsAddBrokerOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const base_url = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL;
+
+  // const connectAG = async () => {
+  //   try {
+  //     setIsLoading(true);
+
+  //     const token = Cookies.get("token"); // Get token from cookies
+  //     console.log("token::::", token);
+
+  //     const { data } = await axios.get(
+  //       `${base_url}/user/connect-angelone`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+
+  //     window.location.assign(data.url); // Redirect to AngelOne auth URL
+  //   } catch (err) {
+  //     console.error("Error connecting AngelOne:", err);
+  //     alert("Failed to connect AngelOne. Please try again.");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const brokers = [
     {
@@ -89,63 +119,16 @@ export default function BrokersPage() {
               Manage your trading accounts and broker integrations
             </p>
           </div>
-          {/* <Dialog open={isAddBrokerOpen} onOpenChange={setIsAddBrokerOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Broker
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Add New Broker</DialogTitle>
-                    <DialogDescription>Connect a new broker to start trading with your strategies.</DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="broker-type">Broker</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a broker" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ib">Interactive Brokers</SelectItem>
-                          <SelectItem value="td">TD Ameritrade</SelectItem>
-                          <SelectItem value="alpaca">Alpaca</SelectItem>
-                          <SelectItem value="binance">Binance</SelectItem>
-                          <SelectItem value="coinbase">Coinbase Pro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="api-key">API Key</Label>
-                      <Input id="api-key" placeholder="Enter your API key" type="password" />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="api-secret">API Secret</Label>
-                      <Input id="api-secret" placeholder="Enter your API secret" type="password" />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="account-type">Account Type</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select account type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="live">Live Trading</SelectItem>
-                          <SelectItem value="paper">Paper Trading</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                      Connect Broker
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog> */}
-          <BrokerModal />
+          <div className="flex gap-2 items-center">
+            <BrokerModal />
+            {/* <Button
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={connectAG}
+              disabled={isLoading}
+            >
+              {isLoading ? "Connecting..." : "Connect AngelOne"}
+            </Button> */}
+          </div>
         </div>
 
         {/* Summary Cards */}
