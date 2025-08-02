@@ -65,6 +65,28 @@ const BrokerModal = () => {
     setFormData({});
   };
 
+  function extractTokens(callbackUrl: string) {
+  try {
+    const url = new URL(callbackUrl);
+    const params = url.searchParams;
+
+    const authToken = params.get("auth_token");
+    const refreshToken = params.get("refresh_token");
+
+    if (!authToken || !refreshToken) {
+      throw new Error("Missing auth_token or refresh_token in URL");
+    }
+
+    return {
+      authToken,
+      refreshToken,
+    };
+  } catch (e) {
+    console.error("Failed to parse URL:", e);
+    return null;
+  }
+}
+
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
@@ -74,6 +96,20 @@ const BrokerModal = () => {
         const response = await axios.get(`${base_url}/user/connect-angelone`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        const url = response.data.url;
+        const tokens = extractTokens(url);
+        if (tokens) {
+          console.log("Auth:", tokens.authToken);
+          console.log("Refresh:", tokens.refreshToken);
+        }
+        const saveCreds = await axios.post(`${base_url}/user/save-credentials`, {
+          authToken: tokens?.authToken,
+          refreshToken: tokens?.refreshToken,
+        }, 
+        {
+          headers: { Authorization: `Bearer ${token}`
+        }
+        })
         window.location.assign(response.data.url);
         return;
       }

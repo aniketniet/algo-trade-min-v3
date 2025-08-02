@@ -50,11 +50,57 @@ import Trainer from "@/components/Trainer"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 
+import axios from "axios";
+
+
+// const packages = [
+//   {
+//     title: "FREE PLAN",
+//     pricePerDay: { monthly: 0, quarterly: 0, yearly: 0 },
+//     description: "Ideal for testing the waters",
+//     features: [
+//       { text: "5 Strategy Builds", included: true },
+//       { text: "50 Backtests", included: true },
+//       { text: "Live Deployments", included: false },
+//       { text: "Reporting Dashboard", included: true },
+//     ],
+//     popular: false,
+//   },
+//   {
+//     title: "LIMITED PLAN",
+//     pricePerDay: { monthly: 48, quarterly: 41, yearly: 34 },
+//     description: "Smart automation for rising traders",
+//     features: [
+//       { text: "25 Strategies", included: true },
+//       { text: "500 Backtests", included: true },
+//       { text: "Live Deployments: 5", included: true },
+//       { text: "Portfolio Mode: 2 strategies", included: true },
+//       { text: "Access to Pro Templates", included: true },
+//     ],
+//     popular: true,
+//   },
+//   {
+//     title: "UNLIMITED PLAN",
+//     pricePerDay: { monthly: 81, quarterly: 74, yearly: 69 },
+//     description: "For traders ready to scale",
+//     features: [
+//       { text: "50 Strategies", included: true },
+//       { text: "1500 Backtests", included: true },
+//       { text: "Live Deployments: 20", included: true },
+//       { text: "Portfolio Mode: 10 strategies", included: true },
+//       { text: "Strategy Store Access", included: true },
+//       { text: "Advanced Risk Control", included: true },
+//     ],
+//     popular: false,
+//   },
+// ];
+
 // Animated Counter Component
 function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
   const [count, setCount] = useState(0)
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
+
 
   useEffect(() => {
     if (!isInView) return
@@ -83,14 +129,49 @@ function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; d
     </span>
   )
 }
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL;
 
 export default function Home() {
-  
+
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTerm, setSelectedTerm] = useState<"monthly" | "quarterly" | "yearly">("monthly");
   const { scrollYProgress } = useScroll()
   const heroRef = useRef(null)
 
   // Parallax effects
   const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"])
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const res = await axios.get(`${baseUrl}/auth/get-all-packages`);
+        const transformed = res.data.packages.map((pkg) => ({
+          title: pkg.name,
+          pricePerDay: pkg.pricingPerDay,
+          description: pkg.description || "",
+          features: pkg.features.map((f) => ({
+            text: f.value || f.name,
+            included: f.enabled,
+          })),
+          popular: pkg.mostPopular,
+        }));
+        setPackages(transformed);
+      } catch (err) {
+        console.error("Failed to fetch packages", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackages();
+  }, []);
+
+  if (loading) return <div className="text-center py-10">Loading packages...</div>;
+  
+ 
+
+  // const selectedTerm = "monthly"; // can be state-controlled for switching
 
   return (
     <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden">
@@ -627,111 +708,78 @@ export default function Home() {
 
       {/* Pricing */}
       <section id="pricing" className="py-20 sm:py-32">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="mb-4 text-3xl font-bold text-gray-900 sm:text-4xl">Pricing Built for Traders</h2>
-          </motion.div>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="mb-4 text-3xl font-bold text-gray-900 sm:text-4xl">
+            Pricing Built for Traders
+          </h2>
+        </motion.div>
 
-          <div className="grid gap-8 lg:grid-cols-3">
-            {[
-              {
-                title: "FREE PLAN",
-                price: "₹0",
-                period: "/day",
-                description: "Ideal for testing the waters",
-                features: [
-                  { text: "5 Strategy Builds", included: true },
-                  { text: "50 Backtests", included: true },
-                  { text: "No Live Deployments", included: false },
-                  { text: "Reporting Dashboard", included: true },
-                ],
-                popular: false,
-              },
-              {
-                title: "LIMITED PLAN",
-                price: "₹29",
-                period: "/day",
-                description: "Smart automation for rising traders",
-                features: [
-                  { text: "25 Strategies", included: true },
-                  { text: "500 Backtests", included: true },
-                  { text: "Live Deployments: 5", included: true },
-                  { text: "Portfolio Mode: 2 strategies", included: true },
-                  { text: "Access to Pro Templates", included: true },
-                ],
-                popular: true,
-              },
-              {
-                title: "UNLIMITED PLAN",
-                price: "₹49",
-                period: "/day",
-                description: "For traders ready to scale",
-                features: [
-                  { text: "50 Strategies", included: true },
-                  { text: "1500 Backtests", included: true },
-                  { text: "Live Deployments: 20", included: true },
-                  { text: "Portfolio Mode: 10 strategies", included: true },
-                  { text: "Strategy Store Access", included: true },
-                  { text: "Advanced Risk Control", included: true },
-                ],
-                popular: false,
-              },
-            ].map((plan, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ y: -10 }}
-                className={`relative bg-white rounded-2xl border p-8 shadow-lg ${plan.popular ? "border-blue-200 ring-2 ring-blue-100" : "border-gray-200"
-                  }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-0 right-0 mx-auto w-32 rounded-full bg-blue-600 py-1 text-center text-sm font-medium text-white">
-                    Most Popular
-                  </div>
-                )}
-                <div className={plan.popular ? "pt-4" : ""}>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.title}</h3>
-                  <p className="text-gray-600 mb-6">{plan.description}</p>
-                  <div className="mb-6 flex items-baseline">
-                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                    <span className="ml-1 text-gray-600">{plan.period}</span>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-start">
-                        {feature.included ? (
-                          <Check className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
-                        ) : (
-                          <X className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
-                        )}
-                        <span className={feature.included ? "text-gray-700" : "text-gray-500 line-through"}>
-                          {feature.text}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className={`w-full ${plan.popular
+        <div className="grid gap-8 lg:grid-cols-3">
+          {packages.map((plan, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ y: -10 }}
+              className={`relative bg-white rounded-2xl border p-8 shadow-lg ${
+                plan.popular ? "border-blue-200 ring-2 ring-blue-100" : "border-gray-200"
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-4 left-0 right-0 mx-auto w-32 rounded-full bg-blue-600 py-1 text-center text-sm font-medium text-white">
+                  Most Popular
+                </div>
+              )}
+              <div className={plan.popular ? "pt-4" : ""}>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.title}</h3>
+                <p className="text-gray-600 mb-6">{plan.description}</p>
+                <div className="mb-6 flex items-baseline">
+                  <span className="text-4xl font-bold text-gray-900">
+                    ₹{plan.pricePerDay[selectedTerm]}
+                  </span>
+                  <span className="ml-1 text-gray-600">/day</span>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  {plan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-start">
+                      {feature.included ? (
+                        <Check className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
+                      ) : (
+                        <X className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
+                      )}
+                      <span
+                        className={
+                          feature.included ? "text-gray-700" : "text-gray-500 line-through"
+                        }
+                      >
+                        {feature.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  className={`w-full ${
+                    plan.popular
                       ? "bg-blue-600 hover:bg-blue-700 text-white"
                       : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                      }`}
-                  >
-                    {plan.title === "FREE PLAN" ? "Start Free" : "Start Free Trial"}
-                  </Button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  }`}
+                >
+                  {plan.title === "FREE PLAN" ? "Start Free" : "Start Free Trial"}
+                </Button>
+              </div>
+            </motion.div>
+          ))}
         </div>
-      </section>
+      </div>
+    </section>
 
       <WhyChooseUs />
 

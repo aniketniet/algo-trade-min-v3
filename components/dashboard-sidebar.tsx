@@ -151,7 +151,7 @@ const DashboardSidebar = () => {
   return (
     <div>
       {/* Desktop Sidebar */}
-      <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white md:flex h-full">
+      <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white md:flex fixed top-0 left-0 h-screen overflow-y-auto z-30">
         
         <div className="flex h-20 items-center justify-center border-b border-gray-200 px-6 ">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold">
