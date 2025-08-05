@@ -91,28 +91,26 @@ const BrokerModal = () => {
     try {
       setIsLoading(true);
 
-      // AngelOne special redirect logic
       if (selectedBroker?.name === "AngelOne") {
         const response = await axios.get(`${base_url}/user/connect-angelone`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const url = response.data.url;
-        const tokens = extractTokens(url);
-        if (tokens) {
-          console.log("Auth:", tokens.authToken);
-          console.log("Refresh:", tokens.refreshToken);
+      
+        const popup = window.open(response.data.url, 'angelone_auth', 'width=600,height=800');
+        // const popup = window.open('https://x7klbpj3-4000.inc1.devtunnels.ms/angelone/callback?auth_token=abc&refresh_token=def&feed_token=ghi', 'angelone_auth', 'width=600,height=800');
+      
+        function messageHandler(event: MessageEvent) {
+          if (event.data?.type === 'ANGELONE_AUTH_SUCCESS') {
+            console.log('AngelOne linked successfully');
+          } else if (event.data?.type === 'ANGELONE_AUTH_ERROR') {
+            console.error('AngelOne linking failed:', event.data.error);
+          }
+          window.removeEventListener('message', messageHandler);
         }
-        const saveCreds = await axios.post(`${base_url}/user/save-credentials`, {
-          authToken: tokens?.authToken,
-          refreshToken: tokens?.refreshToken,
-        }, 
-        {
-          headers: { Authorization: `Bearer ${token}`
-        }
-        })
-        window.location.assign(response.data.url);
+        window.addEventListener('message', messageHandler);
         return;
       }
+      
 
       const formPayload = new FormData();
       formPayload.append("brokerId", selectedBroker._id);
