@@ -22,28 +22,33 @@ type StrategyPayload = {
   profitTrailing: string;
   trailingConfig: Record<string, any>;
   legs: any[];
+  mode: string;
   longEntryConditions?: any[];
   shortEntryConditions?: any[];
   exitConditions?: any[];
   useCombinedChart?: boolean;
+  transactionType?: string;
+  chartType?: string;
+  interval?: string;
+  maxTradeCycle?: string;
 };
 
 export const useStrategyApi = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-
-
   const saveStrategyData = async (payload: StrategyPayload) => {
     setIsLoading(true);
     setError(null);
     
     try {
-          const token = Cookies.get('token');
+      const token = Cookies.get('token');
     
       if (!token) {
         throw new Error('Authentication token not found');
       }
+
+      console.log('Sending strategy payload:', payload);
 
       const response = await axios.post(`${API_BASE_URL}/user/strategies`, payload, {
         headers: {
@@ -52,9 +57,11 @@ export const useStrategyApi = () => {
         }
       });
       
+      console.log('Strategy creation response:', response.data);
       return response.data;
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to save strategy';
+      console.error('Strategy creation error:', err);
+      const errorMessage = err.response?.data?.message || err.response?.data?.Message || err.message || 'Failed to save strategy';
       setError(errorMessage);
       throw err;
     } finally {

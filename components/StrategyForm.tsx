@@ -165,8 +165,8 @@ const handleSubmit = async () => {
     return;
   }
 
-  // Transform the payload to match the desired structure
-  const payload = {
+  // Transform the payload to match the backend schema exactly
+  const payload: any = {
     strategyName: formData.strategyName,
     strategyType: strategyType,
     instruments: selectedInstruments,
@@ -202,24 +202,28 @@ const handleSubmit = async () => {
         value: leg.target?.value || 0,
         trigger: leg.target?.trigger || "price"
       }
-    }))
+    })),
+    // Add mode field for backend
+    mode: "backtest"
   };
 
+  // Add indicator-based fields if needed
   if (strategyType === "Indicator Based") {
     payload.longEntryConditions = formData.longEntryConditions;
     payload.shortEntryConditions = formData.shortEntryConditions;
     payload.exitConditions = formData.exitConditions;
     payload.useCombinedChart = formData.useCombinedChart;
+    payload.transactionType = formData.transactionType;
+    payload.chartType = formData.chartType;
+    payload.interval = formData.interval;
+    payload.maxTradeCycle = formData.maxTradeCycle;
   }
 
   try {
     await saveStrategyData(payload);
     alert('Strategy saved successfully!');
     // Reset form after successful save
-    router.push({
-      pathname: '/strategies',
-      query: { success: 'true' }
-    });
+    router.push('/dashboard/strategies');
     setFormData({
       ...formData,
       strategyName: "",
@@ -228,6 +232,7 @@ const handleSubmit = async () => {
     setOrderLegs([]);
   } catch (error) {
     // Error is already handled by the hook
+    console.error('Strategy creation failed:', error);
   }
 };
 

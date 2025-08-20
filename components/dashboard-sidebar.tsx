@@ -24,6 +24,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
+import { useMarketData } from "@/hooks/useMarketData"
+
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: <TrendingUp /> },
@@ -31,21 +33,18 @@ const navLinks = [
   { href: "/dashboard/strategies", label: "Strategies", icon: <Target /> },
   // { href: "/dashboard/backtest", label: "Backtest", icon: <TestTube /> },
   { href: "/dashboard/reports", label: "Reports", icon: <FileText /> },
-  { href: "/dashboard/trading", label: "Trading", icon: <BarChart /> },
+  // { href: "/dashboard/trading", label: "Trading", icon: <BarChart /> },
 //   { href: "#", label: "Calendar", icon: <Calendar /> },
 //   { href: "#", label: "Messages", icon: <MessageSquare /> },
 //   { href: "#", label: "Settings", icon: <Settings /> },
 ]
 
-const indices = [
-  { name: "NIFTY", value: "24687.70", change: "-0.25", changeType: "negative" },
-  { name: "BNF", value: "55861.40", change: "+0.20", changeType: "positive" },
-  { name: "FN", value: "26417.10", change: "-0.31", changeType: "negative" },
-]
+
 
 const DashboardSidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const { marketData: indices, loading, error } = useMarketData()
 
   const renderNavLink = (href: string, label: string, icon: React.ReactNode) => {
     const isActive = pathname === href
@@ -67,31 +66,72 @@ const DashboardSidebar = () => {
   }
 
 
-   const renderIndices = () => (
+   const handleIndexClick = (index: { name: string; symbol: string }) => {
+    // Option 1: Redirect to TradingView chart with specific chart ID
+    const encodedSymbol = encodeURIComponent(index.symbol)
+    const chartId = 'neonMV7B' // You can change this to any chart ID you prefer
+    const tradingViewUrl = `https://in.tradingview.com/chart/${chartId}/?symbol=${encodedSymbol}`
+    
+    // Option 2: Alternative - redirect to symbol page (uncomment if preferred)
+    // const tradingViewUrl = `https://in.tradingview.com/symbols/${index.symbol}/`
+    
+    window.open(tradingViewUrl, '_blank')
+  }
+
+  const renderIndices = () => (
     <div className="px-2 py-4 border-t border-gray-200">
-      <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-        Indices
-      </h3>
+      <div className="flex items-center justify-between px-4 mb-2">
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Indices
+        </h3>
+        {loading && (
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+            <span className="text-xs text-gray-500 ml-1">Live</span>
+          </div>
+        )}
+      </div>
       <div className="space-y-2">
         {indices.map((index) => (
-          <div key={index.name} className="flex items-center justify-between px-4 py-2">
+          <div 
+            key={index.name} 
+            className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-gray-50 rounded-md transition-colors"
+            onClick={() => handleIndexClick(index)}
+          >
             <div className="flex items-center">
               <span className="text-sm font-medium text-gray-900">{index.name}</span>
               <ExternalLink className="ml-2 h-3 w-3 text-gray-400" />
             </div>
             <div className="text-right">
-              <div className="text-sm font-medium text-gray-900">{index.value}</div>
+              <div className="text-sm font-medium text-gray-900">
+                {loading ? (
+                  <div className="animate-pulse bg-gray-200 h-4 w-16 rounded"></div>
+                ) : (
+                  index.value
+                )}
+              </div>
               <div className={`text-xs ${
                 index.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
               }`}>
-                ({index.change}%)
+                {loading ? (
+                  <div className="animate-pulse bg-gray-200 h-3 w-12 rounded"></div>
+                ) : (
+                  `(${index.change}%)`
+                )}
               </div>
             </div>
           </div>
         ))}
       </div>
+      {error && (
+        <div className="px-4 mt-2">
+          <p className="text-xs text-red-500">{error}</p>
+        </div>
+      )}
     </div>
   )
+
+
 
   const renderHelpDesk = () => (
     <div className="px-2 py-4 border-t border-gray-200">

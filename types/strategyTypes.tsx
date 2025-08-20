@@ -22,7 +22,7 @@ export interface OrderLeg {
 
 export interface FormData {
   strategyName: string;
-  orderType: string;
+  orderType: "MIS" | "CNC" | "BTST";
   startTime: string;
   squareOff: string;
   noTradeAfter: string;
@@ -30,7 +30,11 @@ export interface FormData {
   maxProfit: number;
   maxLoss: number;
   profitTrailing: string;
-  trailingConfig: Record<string, any>;
+  trailingConfig: {
+    lockProfitAt?: number;
+    trailProfitBy?: number;
+    everyIncrease?: number;
+  };
   transactionType: string;
   chartType: string;
   interval: string;

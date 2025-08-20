@@ -26,7 +26,7 @@ export default function AlgoroomsProfile() {
     { name: "FN", value: "26440.60(-0.15 %)", color: "text-red-500" },
   ];
 
-  const copyToClipboard = (text) => {
+  const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
 

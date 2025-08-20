@@ -92,24 +92,68 @@ const BrokerModal = () => {
       setIsLoading(true);
 
       if (selectedBroker?.name === "AngelOne") {
-        const response = await axios.get(`${base_url}/user/connect-angelone`, {
+        // 1) Add listener BEFORE opening the popup
+        let popup: Window | null = null;
+        let handled = false;
+      
+        function cleanup() {
+          window.removeEventListener("message", messageHandler);
+          if (popup && !popup.closed) popup.close();
+        }
+      
+        async function messageHandler(event: MessageEvent) {
+          // 2) Security: only accept from your backend that rendered /angelone/callback
+          const expected = process.env.NEXT_PUBLIC_BACKEND_ORIGIN; // e.g. "https://x7klbpj3-4000.inc1.devtunnels.ms"
+          if (event.origin !== expected) return;
+      
+          if (handled) return; // guard against duplicates
+          handled = true;
+      
+          try {
+            if (event.data?.type === "ANGELONE_AUTH_SUCCESS") {
+              const { auth_token, refresh_token, feed_token, user_id } = event.data;
+      
+              // Only save credentials if they weren't already saved by the backend
+              if (!user_id) {
+                await axios.post(
+                  `${base_url}/user/save-credentials`,
+                  { auth_token, refresh_token, feed_token },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+              }
+      
+              console.log("AngelOne linked successfully");
+              alert("Angel One connected successfully!");
+              setIsOpen(false);
+              // router.replace("/dashboard/trading"); // navigate now if you want
+            } else if (event.data?.type === "ANGELONE_AUTH_ERROR") {
+              console.error("AngelOne linking failed:", event.data.error);
+              alert("Failed to connect Angel One: " + event.data.error);
+            }
+          } catch (err) {
+            console.error("Saving tokens failed", err);
+            alert("Failed to save Angel One credentials. Please try again.");
+          } finally {
+            cleanup();
+          }
+        }
+      
+        window.addEventListener("message", messageHandler);
+      
+        // 3) Open popup AFTER listener is ready
+        const { data } = await axios.get(`${base_url}/user/connect-angelone`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        popup = window.open(data.url, "angelone_auth", "width=600,height=800");
       
-        const popup = window.open(response.data.url, 'angelone_auth', 'width=600,height=800');
-        // const popup = window.open('https://x7klbpj3-4000.inc1.devtunnels.ms/angelone/callback?auth_token=abc&refresh_token=def&feed_token=ghi', 'angelone_auth', 'width=600,height=800');
+        // 4) Optional: safety timeout/cleanup if user closes popup without completing
+        setTimeout(() => {
+          if (!handled) cleanup();
+        }, 3 * 60 * 1000); // 3 minutes
       
-        function messageHandler(event: MessageEvent) {
-          if (event.data?.type === 'ANGELONE_AUTH_SUCCESS') {
-            console.log('AngelOne linked successfully');
-          } else if (event.data?.type === 'ANGELONE_AUTH_ERROR') {
-            console.error('AngelOne linking failed:', event.data.error);
-          }
-          window.removeEventListener('message', messageHandler);
-        }
-        window.addEventListener('message', messageHandler);
         return;
-      }
+      }      
+      
       
 
       const formPayload = new FormData();

@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 import { DashboardChart } from "@/components/dashboard-chart";
 import { DashboardPieChart } from "@/components/dashboard-pie-chart";
+import TradingViewMarketOverview from "@/components/TradingViewMarketOverview";
 
 export default function DashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -271,20 +272,20 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-gray-200 bg-white text-gray-800">
-              <CardHeader>
-                <CardTitle>Strategy Allocation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <DashboardPieChart />
-                </div>
-              </CardContent>
-            </Card>
+                         <Card className="border-gray-200 bg-white text-gray-800">
+               <CardHeader>
+                 <CardTitle>Global Markets</CardTitle>
+               </CardHeader>
+               <CardContent>
+                 <div className="h-[600px]">
+                   <TradingViewMarketOverview />
+                 </div>
+               </CardContent>
+             </Card>
           </div>
 
           {/* Active Strategies and Recent Activity */}
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-3">
             <Card className="border-gray-200 bg-white text-gray-800">
               <CardHeader>
                 <CardTitle>Active Strategies</CardTitle>

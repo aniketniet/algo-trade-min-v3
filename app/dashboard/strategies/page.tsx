@@ -5,6 +5,7 @@ import { Plus, Target, Play, Pause, TrendingDown, FileText, Clock } from "lucide
 import { useStrategies } from "@/context/StrategyContext";
 import StrategyForm from "@/components/StrategyForm";
 import StrategyList from "@/components/StrategyList";
+import DeployedStrategies from "@/components/DeployedStrategies";
 
 
 export default function AlgoroomStrategyPage() {
@@ -69,9 +70,11 @@ export default function AlgoroomStrategyPage() {
             <StrategyList strategies={strategies} loading={loading} />
           )}
 
+          {activeTab === "Deployed Strategies" && (
+            <DeployedStrategies />
+          )}
           
-          {(activeTab === "Deployed Strategies" ||
-            activeTab === "Strategy Template" ||
+          {(activeTab === "Strategy Template" ||
             activeTab === "My Portfolio") && (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">

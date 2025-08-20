@@ -37,8 +37,8 @@ export default function AngelOnePage() {
 
   useEffect(() => {
     fetchProfile();
-    fetchOrderHistory();
-    fetchTradeHistory();
+    // fetchOrderHistory();
+    // fetchTradeHistory();
   }, []);
 
   const fetchProfile = async () => {
@@ -207,8 +207,7 @@ export default function AngelOnePage() {
         </div>
       </div>
 
-      {/* Order History - Full Width */}
-      <Card className="w-full border-gray-200 bg-white shadow-sm mt-6">
+      {/* <Card className="w-full border-gray-200 bg-white shadow-sm mt-6">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">Order History</CardTitle>
         </CardHeader>
@@ -266,7 +265,6 @@ export default function AngelOnePage() {
         </CardContent>
       </Card>
 
-      {/* Trade History - Scrollable */}
       <Card className="w-full border-gray-200 bg-white shadow-sm mt-6">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">Trade History</CardTitle>
@@ -309,7 +307,7 @@ export default function AngelOnePage() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
     </main>
   );
 }
