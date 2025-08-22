@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
 import axios from "axios";
+import TradingDebugPanel from "@/components/TradingDebugPanel";
 
 export default function AngelOnePage() {
   const [profile, setProfile] = useState<any>(null);
@@ -18,6 +19,7 @@ export default function AngelOnePage() {
   const [orderHistory, setOrderHistory] = useState<any[]>([]);
   const [tradeHistory, setTradeHistory] = useState<any[]>([]);
   const [tradesLoading, setTradesLoading] = useState(true);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const base_url = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || "http://localhost:4000/api";
 
   const [formData, setFormData] = useState({
@@ -129,10 +131,25 @@ export default function AngelOnePage() {
 
   return (
     <main className="flex-1 overflow-auto bg-gray-50 p-4 md:p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">AngelOne</h1>
-        <p className="text-gray-600">User Profile Overview</p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Trading Dashboard</h1>
+          <p className="text-gray-600">Monitor and manage your trading strategies</p>
+        </div>
+        <Button 
+          onClick={() => setShowDebugPanel(!showDebugPanel)}
+          variant="outline"
+        >
+          {showDebugPanel ? "Hide" : "Show"} Debug Panel
+        </Button>
       </div>
+
+      {/* Debug Panel */}
+      {showDebugPanel && (
+        <div className="mb-6">
+          <TradingDebugPanel />
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-6 justify-between">
         {/* Left Side: Place Order */}

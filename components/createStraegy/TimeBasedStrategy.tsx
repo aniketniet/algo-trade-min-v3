@@ -12,7 +12,7 @@ interface OrderLeg {
   optionType: "CE" | "PE";
   expiryType: "Weekly" | "Monthly";
   quantity: number;
-  strikeType: "ATM" | "ITM" | "OTM";
+  strikeType: "ATM" | "ATMPER" | "ITM" | "OTM" | "CP" | "CP >=" | "CP <=";
   strikeValue: string;
   stopLoss: StopLossTarget;
   target: StopLossTarget;
@@ -109,179 +109,185 @@ const TimeBasedStrategy: React.FC<TimeBasedStrategyProps> = ({
       childField: keyof StopLossTarget,
       value: any
     ) => void;
-  }> = ({ leg, index, onRemove, onUpdate, onNestedUpdate }) => (
-    <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-white">
-      <div className="flex justify-between items-center mb-4">
-        <h4 className="font-medium text-gray-700">
-          Order Leg #{index + 1}
-        </h4>
-        <button
-          onClick={() => onRemove(index)}
-          className="text-red-500 hover:text-red-700 p-1"
-          aria-label="Remove order leg"
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-
-      <div className="flex items-center justify-start mb-4  gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+  }> = ({ leg, index, onRemove, onUpdate, onNestedUpdate }) => {
+    return (
+      <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-white">
+        <div className="flex justify-between items-center mb-4">
+          <h4 className="font-medium text-gray-700">
+            Order Leg #{index + 1}
+          </h4>
           <button
-            className={`px-3 py-1 rounded text-sm font-medium ${
-              leg.orderType === "SELL"
-                ? "bg-red-100 text-red-600"
-                : "bg-green-100 text-green-600"
-            }`}
-            onClick={() =>
-              onUpdate(
-                index,
-                "orderType",
-                leg.orderType === "SELL" ? "BUY" : "SELL"
-              )
-            }
-            aria-label={`Toggle order type to ${leg.orderType === "SELL" ? "BUY" : "SELL"}`}
+            onClick={() => onRemove(index)}
+            className="text-red-500 hover:text-red-700 p-1"
+            aria-label="Remove order leg"
           >
-            <span className="flex items-center ">
-            {leg.orderType}
-            <ArrowUpDown size={12} className="inline ml-1" />
-            </span>
+            <Trash2 size={16} />
           </button>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Qty</span>
-            <input
-              type="number"
-              value={leg.quantity}
-              onChange={(e) => onUpdate(index, "quantity", parseInt(e.target.value) || 0)}
-              className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
-              min="1"
-              aria-label="Quantity"
-            />
+        </div>
+
+        <div className="flex items-center justify-start mb-4 gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <button
+              className={`px-3 py-1 rounded text-sm font-medium ${
+                leg.orderType === "SELL"
+                  ? "bg-red-100 text-red-600"
+                  : "bg-green-100 text-green-600"
+              }`}
+              onClick={() =>
+                onUpdate(
+                  index,
+                  "orderType",
+                  leg.orderType === "SELL" ? "BUY" : "SELL"
+                )
+              }
+              aria-label={`Toggle order type to ${leg.orderType === "SELL" ? "BUY" : "SELL"}`}
+            >
+              <span className="flex items-center">
+                {leg.orderType}
+                <ArrowUpDown size={12} className="inline ml-1" />
+              </span>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Qty</span>
+              <input
+                type="number"
+                value={leg.quantity}
+                onChange={(e) => onUpdate(index, "quantity", parseInt(e.target.value) || 0)}
+                className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
+                min="1"
+                aria-label="Quantity"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center">
-          <button
-            className={`px-3 py-1 rounded text-sm font-medium ${
-              leg.optionType === "PE"
-                ? "bg-red-100 text-red-600"
-                : "bg-green-100 text-green-600"
-            }`}
-            onClick={() =>
-              onUpdate(index, "optionType", leg.optionType === "PE" ? "CE" : "PE")
-            }
-            aria-label={`Toggle option type to ${leg.optionType === "PE" ? "CE" : "PE"}`}
-          >
-            {leg.optionType}
-            <ArrowUpDown size={12} className="inline ml-1" />
-          </button>
-        </div>
+          <div className="flex items-center">
+            <button
+              className={`px-3 py-1 rounded text-sm font-medium ${
+                leg.optionType === "PE"
+                  ? "bg-red-100 text-red-600"
+                  : "bg-green-100 text-green-600"
+              }`}
+              onClick={() =>
+                onUpdate(index, "optionType", leg.optionType === "PE" ? "CE" : "PE")
+              }
+              aria-label={`Toggle option type to ${leg.optionType === "PE" ? "CE" : "PE"}`}
+            >
+              {leg.optionType}
+              <ArrowUpDown size={12} className="inline ml-1" />
+            </button>
+          </div>
 
-        <div className="flex items-center">
-          <button
-            className="px-3 py-1 rounded text-sm font-medium bg-blue-100 text-blue-600"
-            onClick={() =>
-              onUpdate(
-                index,
-                "expiryType",
-                leg.expiryType === "Weekly" ? "Monthly" : "Weekly"
-              )
-            }
-            aria-label={`Toggle expiry type to ${leg.expiryType === "Weekly" ? "Monthly" : "Weekly"}`}
-          >
-            {leg.expiryType}
-            <ArrowUpDown size={12} className="inline ml-1" />
-          </button>
-        </div>
+          <div className="flex items-center">
+            <button
+              className="px-3 py-1 rounded text-sm font-medium bg-blue-100 text-blue-600"
+              onClick={() =>
+                onUpdate(
+                  index,
+                  "expiryType",
+                  leg.expiryType === "Weekly" ? "Monthly" : "Weekly"
+                )
+              }
+              aria-label={`Toggle expiry type to ${leg.expiryType === "Weekly" ? "Monthly" : "Weekly"}`}
+            >
+              {leg.expiryType}
+              <ArrowUpDown size={12} className="inline ml-1" />
+            </button>
+          </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 col-span-2 lg:col-span-1">
-          <select
-            value={leg.strikeType}
-            onChange={(e) => onUpdate(index, "strikeType", e.target.value as OrderLeg["strikeType"])}
-            className="px-3 py-1 border border-gray-300 rounded text-sm bg-gray-50"
-            aria-label="Strike type"
-          >
-            <option value="ATM">ATM</option>
-            <option value="ITM">ITM</option>
-            <option value="OTM">OTM</option>
-          </select>
-          <input
-            type="text"
-            value={leg.strikeValue}
-            onChange={(e) => onUpdate(index, "strikeValue", e.target.value)}
-            className="w-full sm:w-24 px-2 py-1 border border-gray-300 rounded text-sm"
-            placeholder="e.g., ITM 2000"
-            aria-label="Strike value"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div className="border p-3 rounded-lg">
-          <h5 className="text-sm font-medium mb-2">Stop Loss</h5>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 col-span-2 lg:col-span-1">
             <select
-              value={leg.stopLoss.type}
-              onChange={(e) => onNestedUpdate(index, "stopLoss", "type", e.target.value)}
+              value={leg.strikeType}
+              onChange={(e) => onUpdate(index, "strikeType", e.target.value as OrderLeg["strikeType"])}
               className="px-3 py-1 border border-gray-300 rounded text-sm bg-gray-50"
-              aria-label="Stop loss type"
+              aria-label="Strike type"
             >
-              <option value="points">Points</option>
-              <option value="percentage">Percentage</option>
+              <option value="ATM">ATM</option>
+              <option value="ATMPER">ATMPER</option>
+              <option value="ITM">ITM</option>
+              <option value="OTM">OTM</option>
+              <option value="CP">CP</option>
+              <option value="CP >=">CP &gt;=</option>
+              <option value="CP <=">CP &lt;=</option>
             </select>
             <input
-              type="number"
-              value={leg.stopLoss.value}
-              onChange={(e) => onNestedUpdate(index, "stopLoss", "value", parseFloat(e.target.value) || 0)}
-              className="w-full sm:w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-              step="0.01"
-              aria-label="Stop loss value"
+              type="text"
+              value={leg.strikeValue}
+              onChange={(e) => onUpdate(index, "strikeValue", e.target.value)}
+              className="w-full sm:w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+              placeholder="e.g., ITM 2000"
+              aria-label="Strike value"
             />
-            <select
-              value={leg.stopLoss.trigger}
-              onChange={(e) => onNestedUpdate(index, "stopLoss", "trigger", e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded text-sm bg-white"
-              aria-label="Stop loss trigger"
-            >
-              <option value="price">Price</option>
-              <option value="premium">Premium</option>
-            </select>
           </div>
         </div>
 
-        <div className="border p-3 rounded-lg">
-          <h5 className="text-sm font-medium mb-2">Target</h5>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <select
-              value={leg.target.type}
-              onChange={(e) => onNestedUpdate(index, "target", "type", e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded text-sm bg-gray-50"
-              aria-label="Target type"
-            >
-              <option value="points">Points</option>
-              <option value="percentage">Percentage</option>
-            </select>
-            <input
-              type="number"
-              value={leg.target.value}
-              onChange={(e) => onNestedUpdate(index, "target", "value", parseFloat(e.target.value) || 0)}
-              className="w-full sm:w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-              step="0.01"
-              aria-label="Target value"
-            />
-            <select
-              value={leg.target.trigger}
-              onChange={(e) => onNestedUpdate(index, "target", "trigger", e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded text-sm bg-white"
-              aria-label="Target trigger"
-            >
-              <option value="price">Price</option>
-              <option value="premium">Premium</option>
-            </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="border p-3 rounded-lg">
+            <h5 className="text-sm font-medium mb-2">Stop Loss</h5>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <select
+                value={leg.stopLoss.type}
+                onChange={(e) => onNestedUpdate(index, "stopLoss", "type", e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded text-sm bg-gray-50"
+                aria-label="Stop loss type"
+              >
+                <option value="points">Points</option>
+                <option value="percentage">Percentage</option>
+              </select>
+              <input
+                type="number"
+                value={leg.stopLoss.value}
+                onChange={(e) => onNestedUpdate(index, "stopLoss", "value", parseFloat(e.target.value) || 0)}
+                className="w-full sm:w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                step="0.01"
+                aria-label="Stop loss value"
+              />
+              <select
+                value={leg.stopLoss.trigger}
+                onChange={(e) => onNestedUpdate(index, "stopLoss", "trigger", e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded text-sm bg-white"
+                aria-label="Stop loss trigger"
+              >
+                <option value="price">Price</option>
+                <option value="premium">Premium</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="border p-3 rounded-lg">
+            <h5 className="text-sm font-medium mb-2">Target</h5>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <select
+                value={leg.target.type}
+                onChange={(e) => onNestedUpdate(index, "target", "type", e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded text-sm bg-gray-50"
+                aria-label="Target type"
+              >
+                <option value="points">Points</option>
+                <option value="percentage">Percentage</option>
+              </select>
+              <input
+                type="number"
+                value={leg.target.value}
+                onChange={(e) => onNestedUpdate(index, "target", "value", parseFloat(e.target.value) || 0)}
+                className="w-full sm:w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                step="0.01"
+                aria-label="Target value"
+              />
+              <select
+                value={leg.target.trigger}
+                onChange={(e) => onNestedUpdate(index, "target", "trigger", e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded text-sm bg-white"
+                aria-label="Target trigger"
+              >
+                <option value="price">Price</option>
+                <option value="premium">Premium</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="p-4 sm:p-6 bg-gray-50 border border-gray-200 rounded-lg shadow-sm">

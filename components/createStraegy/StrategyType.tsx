@@ -4,7 +4,7 @@ const StrategyTypeSelector = ({ strategyType, onStrategyTypeChange }) => (
     <h2 className="text-lg font-semibold mb-4">Strategy Type</h2>
     <div className="flex gap-4">
       {["Time Based", "Indicator Based"].map((type) => {
-        const isDisabled = type === "Indicator Based";
+        const isDisabled = false; // Enable both strategy types
         const isSelected = strategyType === type;
 
         return (

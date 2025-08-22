@@ -32,7 +32,7 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
     getAvailableCategories
   } = useInstruments();
 
-  const categories = ["Options", "Equity", "Futures", "Indices", "CDS", "MCX"];
+  const categories = ["Options", "Equity", "Futures", "Indices"];
 
   // Fetch instruments data from API when modal opens
   useEffect(() => {
@@ -84,8 +84,12 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
   };
 
   const handleInstrumentSelect = (instrument: string) => {
-    // For now, only allow single selection
-    setSelectedInstruments([instrument]);
+    // Allow multiple selection
+    if (selectedInstruments.includes(instrument)) {
+      setSelectedInstruments(selectedInstruments.filter(i => i !== instrument));
+    } else {
+      setSelectedInstruments([...selectedInstruments, instrument]);
+    }
   };
 
   if (!isOpen) return null;

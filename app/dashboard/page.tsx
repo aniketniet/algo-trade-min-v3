@@ -277,7 +277,7 @@ export default function DashboardPage() {
                  <CardTitle>Global Markets</CardTitle>
                </CardHeader>
                <CardContent>
-                 <div className="h-[600px]">
+                 <div className="h-[500px]">
                    <TradingViewMarketOverview />
                  </div>
                </CardContent>

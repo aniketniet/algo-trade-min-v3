@@ -51,6 +51,7 @@ export interface FormData {
   exitConditions: any[];
   useCombinedChart: boolean;
   maxTradeCycle: string;
+  legs?: OrderLeg[];
 }
 
 export interface InstrumentsSectionProps {

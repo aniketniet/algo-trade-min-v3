@@ -138,7 +138,7 @@ function TradingViewMarketOverview() {
         "support_host": "https://www.tradingview.com",
         "backgroundColor": "#ffffff",
         "width": "100%",
-        "height": "600",
+        "height": "300",
         "showSymbolLogo": true,
         "showChart": true
       }`;
@@ -154,8 +154,8 @@ function TradingViewMarketOverview() {
   }, []);
 
   return (
-    <div className="tradingview-widget-container" ref={container} style={{ height: "600px", width: "100%" }}>
-      <div className="tradingview-widget-container__widget" style={{ height: "calc(100% - 32px)", width: "100%" }}></div>
+    <div className="tradingview-widget-container" ref={container} style={{ height: "500px", width: "100%" }}>
+      {/* <div className="tradingview-widget-container__widget" style={{ height: "calc(100% - 32px)", width: "100%" }}></div> */}
       <div className="tradingview-widget-copyright">
         <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
           <span className="blue-text">Market data by TradingView</span>

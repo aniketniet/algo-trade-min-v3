@@ -120,6 +120,7 @@ const StrategyCreator: React.FC = () => {
     exitConditions: [],
     useCombinedChart: false,
     maxTradeCycle: "1",
+    legs: [],
   });
 
   const handleInputChange = (field: keyof FormData, value: any) => {
@@ -149,6 +150,97 @@ const StrategyCreator: React.FC = () => {
     setOrderLegs(legs);
   };
 
+  // Handler functions for Indicator Based Strategy
+  const handleAddCondition = (conditionType: 'longEntryConditions' | 'shortEntryConditions' | 'exitConditions') => {
+    setFormData(prev => ({
+      ...prev,
+      [conditionType]: [...prev[conditionType], { indicator: "", comparator: "", value: "" }]
+    }));
+  };
+
+  const handleRemoveCondition = (conditionType: 'longEntryConditions' | 'shortEntryConditions' | 'exitConditions', index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [conditionType]: prev[conditionType].filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleUpdateCondition = (conditionType: 'longEntryConditions' | 'shortEntryConditions' | 'exitConditions', index: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [conditionType]: prev[conditionType].map((condition, i) => 
+        i === index ? { ...condition, [field]: value } : condition
+      )
+    }));
+  };
+
+  // Handler functions for Option Legs in Indicator Based Strategy
+  const handleAddLeg = () => {
+    const newLeg: OrderLeg = {
+      orderType: "SELL",
+      optionType: "PE",
+      expiryType: "Weekly",
+      quantity: 75,
+      strikeType: "ATM",
+      strikeValue: "ITM 2000",
+      stopLoss: {
+        type: "points",
+        value: 30,
+        trigger: "price"
+      },
+      target: {
+        type: "points",
+        value: 50,
+        trigger: "price"
+      }
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      legs: [...(prev.legs || []), newLeg]
+    }));
+  };
+
+  const handleRemoveLeg = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      legs: (prev.legs || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleUpdateLeg = <K extends keyof OrderLeg>(
+    index: number,
+    field: K,
+    value: OrderLeg[K]
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      legs: (prev.legs || []).map((leg, i) => 
+        i === index ? { ...leg, [field]: value } : leg
+      )
+    }));
+  };
+
+  const handleUpdateNestedLeg = (
+    index: number,
+    parentField: "stopLoss" | "target",
+    childField: keyof OrderLeg["stopLoss"],
+    value: any
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      legs: (prev.legs || []).map((leg, i) => 
+        i === index ? { 
+          ...leg, 
+          [parentField]: {
+            ...leg[parentField],
+            [childField]: value
+          }
+        } : leg
+      )
+    }));
+  };
+
 const handleSubmit = async () => {
   if (!formData.strategyName) {
     alert("Please enter a strategy name");
@@ -163,6 +255,27 @@ const handleSubmit = async () => {
   if (strategyType === "Time Based" && orderLegs.length === 0) {
     alert("Please add at least one order leg");
     return;
+  }
+
+  if (strategyType === "Indicator Based") {
+    // Validate that at least one entry condition is configured
+    const hasLongConditions = formData.longEntryConditions.some(condition => 
+      condition.indicator && condition.comparator && condition.value
+    );
+    const hasShortConditions = formData.shortEntryConditions.some(condition => 
+      condition.indicator && condition.comparator && condition.value
+    );
+    
+    if (!hasLongConditions && !hasShortConditions) {
+      alert("Please configure at least one entry condition (Long or Short)");
+      return;
+    }
+
+    // Validate that at least one option leg is configured
+    if (!formData.legs || formData.legs.length === 0) {
+      alert("Please add at least one option leg for the Indicator Based strategy");
+      return;
+    }
   }
 
   // Transform the payload to match the backend schema exactly
@@ -217,6 +330,7 @@ const handleSubmit = async () => {
     payload.chartType = formData.chartType;
     payload.interval = formData.interval;
     payload.maxTradeCycle = formData.maxTradeCycle;
+    payload.legs = formData.legs || [];
   }
 
   try {
@@ -274,6 +388,13 @@ const handleSubmit = async () => {
             <IndicatorBasedStrategy
               formData={formData}
               onInputChange={handleInputChange}
+              onAddCondition={handleAddCondition}
+              onRemoveCondition={handleRemoveCondition}
+              onUpdateCondition={handleUpdateCondition}
+              onAddLeg={handleAddLeg}
+              onRemoveLeg={handleRemoveLeg}
+              onUpdateLeg={handleUpdateLeg}
+              onUpdateNestedLeg={handleUpdateNestedLeg}
             />
           )}
 

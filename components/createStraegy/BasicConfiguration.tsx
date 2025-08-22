@@ -11,9 +11,7 @@ const BasicConfiguration = ({ formData, onInputChange, onToggleDay }) => {
           {orderTypes.map((type) => (
             <label
               key={type}
-              className={`flex items-center gap-2 ${
-                type !== "MIS" ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-              }`}
+              className="flex items-center gap-2 cursor-pointer"
             >
               <input
                 type="radio"
@@ -21,7 +19,6 @@ const BasicConfiguration = ({ formData, onInputChange, onToggleDay }) => {
                 value={type}
                 checked={formData.orderType === type}
                 onChange={(e) => onInputChange("orderType", e.target.value)}
-                disabled={type !== "MIS"}
                 className="w-4 h-4 text-blue-600"
               />
               <span className="text-sm">{type}</span>
