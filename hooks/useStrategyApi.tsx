@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { getErrorMessage } from '../utils/errorMessages';
 
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || 'http://103.189.173.82:4000/api';
@@ -61,7 +62,39 @@ export const useStrategyApi = () => {
       return response.data;
     } catch (err: any) {
       console.error('Strategy creation error:', err);
-      const errorMessage = err.response?.data?.message || err.response?.data?.Message || err.message || 'Failed to save strategy';
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateStrategyData = async (strategyId: string, payload: StrategyPayload) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const token = Cookies.get('token');
+    
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      console.log('Updating strategy payload:', payload);
+
+      const response = await axios.put(`${API_BASE_URL}/user/strategies/${strategyId}`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('Strategy update response:', response.data);
+      return response.data;
+    } catch (err: any) {
+      console.error('Strategy update error:', err);
+      const errorMessage = getErrorMessage(err);
       setError(errorMessage);
       throw err;
     } finally {
@@ -71,6 +104,7 @@ export const useStrategyApi = () => {
 
   return {
     saveStrategyData,
+    updateStrategyData,
     isLoading,
     error,
     resetError: () => setError(null)
@@ -116,7 +150,7 @@ export const useStrategiesList = () => {
         pages: response.data.meta.pages
       });
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to fetch strategies');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

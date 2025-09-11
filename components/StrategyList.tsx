@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Target, Play, Pause, TrendingDown, Rocket } from "lucide-react";
+import { Target, Play, Pause, TrendingDown, Rocket, Edit, MoreVertical } from "lucide-react";
 import { useStrategiesList } from "@/hooks/useStrategyApi";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -15,6 +15,7 @@ const StrategyList = () => {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deployLoadingId, setDeployLoadingId] = useState<string | null>(null);
+  const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
   const router = useRouter();
   const { isTerminalOpen, currentStrategyId, openTerminal, closeTerminal } = useTerminal();
 
@@ -28,7 +29,17 @@ const StrategyList = () => {
    router.push(`/dashboard/backtest?strategyId=${strategyId}`);
   };
 
-  const runBacktest = async (strategyId: string, period: string) => {
+  const handleEditStrategy = (strategyId: string) => {
+    router.push(`/dashboard/strategies?edit=${strategyId}`);
+    setOpenActionMenuId(null);
+  };
+
+  const handleActionMenuClick = (strategyId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenActionMenuId(openActionMenuId === strategyId ? null : strategyId);
+  };
+
+  const runBacktest = async (strategyId: string, period: string, useEnhanced = true) => {
     try {
       const token = Cookies.get("token");
 
@@ -38,8 +49,13 @@ const StrategyList = () => {
 
       setLoadingId(strategyId);
 
-      await axios.post(
-        `${API_BASE_URL}/user/backtest/${strategyId}`,
+      // Use enhanced backtest by default
+      const endpoint = useEnhanced 
+        ? `${API_BASE_URL}/user/backtest-enhanced/${strategyId}`
+        : `${API_BASE_URL}/user/backtest/${strategyId}`;
+
+      const response = await axios.post(
+        endpoint,
         { period },
         {
           headers: {
@@ -48,7 +64,8 @@ const StrategyList = () => {
         }
       );
 
-      alert(`Backtest started for ${period}`);
+      const backtestType = useEnhanced ? "Enhanced" : "Standard";
+      alert(`${backtestType} backtest completed for ${period}! Check results for detailed analysis.`);
       router.push(`/dashboard/backtest?strategyId=${strategyId}`);
     } catch (err: any) {
       alert("Error running backtest: " + (err?.response?.data?.message || err.message));
@@ -152,7 +169,33 @@ const StrategyList = () => {
                   {strategy.status}
                 </span>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                  {/* Action Menu */}
+                  <div className="relative">
+                    <button
+                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      onClick={(e) => handleActionMenuClick(strategy._id, e)}
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+
+                    {/* Action Menu Dropdown */}
+                    {openActionMenuId === strategy._id && (
+                      <div className="absolute right-0 mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-40">
+                        <button
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditStrategy(strategy._id);
+                          }}
+                        >
+                          <Edit className="w-3 h-3" />
+                          Edit Strategy
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Show Backtest button only if NOT backtested */}
                   {!isBacktested && (
                     <div className="relative">
@@ -163,14 +206,30 @@ const StrategyList = () => {
                         {loadingId === strategy._id ? "Processing..." : "Backtest"}
                       </button>
 
-                      {/* Dropdown */}
+                      {/* Enhanced Dropdown */}
                       {openDropdownId === strategy._id && (
-                        <div className="absolute right-0 mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-32">
+                        <div className="absolute right-0 mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-48">
+                          <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b">
+                            Enhanced Backtest
+                          </div>
                           {["1m", "3m", "6m"].map((period) => (
                             <button
                               key={period}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between"
+                              onClick={() => runBacktest(strategy._id, period, true)}
+                            >
+                              <span>{period}</span>
+                              <span className="text-xs text-green-600">✓</span>
+                            </button>
+                          ))}
+                          <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-t border-b">
+                            Standard Backtest
+                          </div>
+                          {["1m", "3m", "6m"].map((period) => (
+                            <button
+                              key={`std-${period}`}
                               className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                              onClick={() => runBacktest(strategy._id, period)}
+                              onClick={() => runBacktest(strategy._id, period, false)}
                             >
                               {period}
                             </button>

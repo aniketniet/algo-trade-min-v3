@@ -24,7 +24,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { usePathname } from "next/navigation"
 import Image from "next/image"
-import { useMarketData } from "@/hooks/useMarketData"
+import { useRealTimeMarketData } from "@/hooks/useRealTimeMarketData"
 
 
 const navLinks = [
@@ -44,7 +44,7 @@ const navLinks = [
 const DashboardSidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
-  const { marketData: indices, loading, error } = useMarketData()
+  const { marketData: indices, loading, error, marketStatus, lastUpdate } = useRealTimeMarketData()
 
   const renderNavLink = (href: string, label: string, icon: React.ReactNode) => {
     const isActive = pathname === href
@@ -84,12 +84,23 @@ const DashboardSidebar = () => {
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Indices
         </h3>
-        {loading && (
-          <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          {marketStatus && (
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+              marketStatus.isOpen 
+                ? 'bg-green-100 text-green-700' 
+                : 'bg-gray-100 text-gray-600'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                marketStatus.isOpen ? 'bg-green-500' : 'bg-gray-400'
+              }`}></div>
+              {marketStatus.isOpen ? 'Open' : 'Closed'}
+            </div>
+          )}
+          {loading && (
             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
-            <span className="text-xs text-gray-500 ml-1">Live</span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <div className="space-y-2">
         {indices.map((index) => (
@@ -126,6 +137,13 @@ const DashboardSidebar = () => {
       {error && (
         <div className="px-4 mt-2">
           <p className="text-xs text-red-500">{error}</p>
+        </div>
+      )}
+      {lastUpdate && (
+        <div className="px-4 mt-2">
+          <p className="text-xs text-gray-400">
+            Last update: {new Date(lastUpdate).toLocaleTimeString()}
+          </p>
         </div>
       )}
     </div>

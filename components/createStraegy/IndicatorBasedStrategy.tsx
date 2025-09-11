@@ -432,7 +432,7 @@ const OrderLegComponent: React.FC<{
               aria-label="Stop loss type"
             >
               <option value="points">Points</option>
-              <option value="percentage">Percentage</option>
+              <option value="percent">Percent</option>
             </select>
             <input
               type="number"
@@ -464,7 +464,7 @@ const OrderLegComponent: React.FC<{
               aria-label="Target type"
             >
               <option value="points">Points</option>
-              <option value="percentage">Percentage</option>
+              <option value="percent">Percent</option>
             </select>
             <input
               type="number"

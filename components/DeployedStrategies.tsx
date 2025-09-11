@@ -13,7 +13,9 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  Trash2,
+  X
 } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -58,6 +60,7 @@ const DeployedStrategies = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [engineLoadingStates, setEngineLoadingStates] = useState<Record<string, boolean>>({});
+  const [undeployLoadingStates, setUndeployLoadingStates] = useState<Record<string, boolean>>({});
   const { isTerminalOpen, currentStrategyId, openTerminal, closeTerminal } = useTerminal();
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || "http://103.189.173.82:4000/api";
@@ -131,6 +134,50 @@ const DeployedStrategies = () => {
       setEngineLoadingStates(prev => ({
         ...prev,
         [brokerId]: false
+      }));
+    }
+  };
+
+  const undeployStrategy = async (strategyId: string, strategyName: string) => {
+    if (!confirm(`Are you sure you want to remove "${strategyName}" from deployed strategies? This will stop the strategy and move it back to your strategy list.`)) {
+      return;
+    }
+
+    try {
+      setUndeployLoadingStates(prev => ({
+        ...prev,
+        [strategyId]: true
+      }));
+
+      const token = Cookies.get("token");
+      const requestBody = {
+        StrategyId: strategyId
+      };
+
+      const response = await axios.post(
+        `${API_BASE_URL}/trading-engine/de-deploy-strategy`,
+        requestBody,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.Status === "Success") {
+        alert(`Strategy "${strategyName}" has been successfully removed from deployed strategies.`);
+        // Refresh the data to get updated status
+        await fetchDeployedStrategies();
+      } else {
+        throw new Error(response.data.Message || "Failed to undeploy strategy");
+      }
+    } catch (err: any) {
+      console.error("Error undeploying strategy:", err);
+      alert(`Failed to remove strategy. ${err?.response?.data?.Message || err.message}`);
+    } finally {
+      setUndeployLoadingStates(prev => ({
+        ...prev,
+        [strategyId]: false
       }));
     }
   };
@@ -304,6 +351,20 @@ const DeployedStrategies = () => {
                                 onOpenTerminal={openTerminal}
                                 disabled={!isActive}
                               />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => undeployStrategy(strategy.strategyId, strategy.StrategyName)}
+                                disabled={undeployLoadingStates[strategy.strategyId]}
+                                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 text-sm"
+                              >
+                                {/* {undeployLoadingStates[strategy.strategyId] ? (
+                                  <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                                ) : (
+                                  <X className="w-3 h-3 mr-1" />
+                                )} */}
+                                {undeployLoadingStates[strategy.strategyId] ? "Removing..." : "Remove"}
+                              </Button>
                               <Badge
                                 variant="outline"
                                 className={

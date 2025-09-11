@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { X, Trash2, ArrowUpDown } from "lucide-react";
 
 interface StopLossTarget {
-  type: "points" | "percentage";
+  type: "points" | "percent";
   value: number;
   trigger: "price" | "premium";
 }
@@ -231,7 +231,7 @@ const TimeBasedStrategy: React.FC<TimeBasedStrategyProps> = ({
                 aria-label="Stop loss type"
               >
                 <option value="points">Points</option>
-                <option value="percentage">Percentage</option>
+                <option value="percent">Percent</option>
               </select>
               <input
                 type="number"
@@ -263,7 +263,7 @@ const TimeBasedStrategy: React.FC<TimeBasedStrategyProps> = ({
                 aria-label="Target type"
               >
                 <option value="points">Points</option>
-                <option value="percentage">Percentage</option>
+                <option value="percent">Percent</option>
               </select>
               <input
                 type="number"

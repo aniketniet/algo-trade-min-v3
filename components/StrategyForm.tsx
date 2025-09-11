@@ -13,6 +13,14 @@ import ProfitTrailing from "./createStraegy/ProfitTrailing";
 import { FormData, OrderLeg, InstrumentsSectionProps, StrategyNameAndSaveProps, Day } from "../types/strategyTypes";
 import { useStrategyApi } from "@/hooks/useStrategyApi";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { getStrategySpecificErrors } from "../utils/errorMessages";
+import TemplateSelector from "./TemplateSelector";
+import { StrategyTemplate } from "../hooks/useStrategyTemplates";
+import { useValidation } from "../utils/validation";
+import ValidatedInput from "./ValidatedInput";
+import ValidationFeedback from "./ValidationFeedback";
 
 const InstrumentsSection: React.FC<InstrumentsSectionProps> = ({
   selectedInstruments,
@@ -51,55 +59,90 @@ const InstrumentsSection: React.FC<InstrumentsSectionProps> = ({
   </div>
 );
 
-const StrategyNameAndSave: React.FC<StrategyNameAndSaveProps> = ({
+const StrategyNameAndSave: React.FC<StrategyNameAndSaveProps & {
+  isEditMode?: boolean;
+  getFieldErrors: (field: string) => string[];
+  getFieldWarnings: (field: string) => string[];
+  isFieldValid: (field: string) => boolean;
+  isFormValid: boolean;
+  getFormErrors: () => string[];
+  getFormWarnings: () => string[];
+}> = ({
   formData,
   onInputChange,
   onSubmit,
   isSubmitting,
+  isEditMode = false,
+  getFieldErrors,
+  getFieldWarnings,
+  isFieldValid,
+  isFormValid,
+  getFormErrors,
+  getFormWarnings
 }) => (
   <div className="border border-gray-200 rounded-lg p-6">
-    <div className="flex items-center gap-4">
-      <input
-        type="text"
-        placeholder="Strategy name"
-        value={formData.strategyName}
-        onChange={(e) => onInputChange("strategyName", e.target.value)}
-        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      />
-      <button type="button" className="text-gray-400 hover:text-gray-600">
-        <Info className="w-5 h-5" />
-      </button>
-      <button
-        type="button"
-        onClick={onSubmit}
-        disabled={isSubmitting}
-        className={`bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors ${
-          isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
-      >
-        {isSubmitting ? 'Saving...' : 'Save & Continue'}
-      </button>
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <ValidatedInput
+            type="text"
+            placeholder="Enter strategy name"
+            value={formData.strategyName}
+            onChange={(e) => onInputChange("strategyName", e.target.value)}
+            label="Strategy Name"
+            required
+            errors={getFieldErrors("strategyName")}
+            warnings={getFieldWarnings("strategyName")}
+            isValid={isFieldValid("strategyName")}
+            helpText="Choose a descriptive name for your strategy"
+          />
+        </div>
+        <button type="button" className="text-gray-400 hover:text-gray-600">
+          <Info className="w-5 h-5" />
+        </button>
+      </div>
+      
+      {/* Form-level validation feedback */}
+      {(getFormErrors().length > 0 || getFormWarnings().length > 0) && (
+        <div className="p-3 bg-gray-50 rounded-lg">
+          <ValidationFeedback
+            errors={getFormErrors()}
+            warnings={getFormWarnings()}
+            isValid={isFormValid}
+          />
+        </div>
+      )}
+      
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={isSubmitting || !isFormValid}
+          className={`bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors ${
+            isSubmitting || !isFormValid ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          {isSubmitting ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update Strategy' : 'Save & Continue')}
+        </button>
+      </div>
     </div>
   </div>
 );
 
-const StrategyCreator: React.FC = () => {
+interface StrategyCreatorProps {
+  strategyId?: string;
+  isEditMode?: boolean;
+}
+
+const StrategyCreator: React.FC<StrategyCreatorProps> = ({ strategyId, isEditMode = false }) => {
   const [strategyType, setStrategyType] = useState<"Time Based" | "Indicator Based">("Time Based");
   const [isInstrumentModalOpen, setIsInstrumentModalOpen] = useState(false);
   const [selectedInstruments, setSelectedInstruments] = useState<string[]>([]);
   const [orderLegs, setOrderLegs] = useState<OrderLeg[]>([]);
-   const router = useRouter();
-  const { saveStrategyData, isLoading, error, resetError } = useStrategyApi();
-
-
-  
-  // useEffect(() => {
-  //   // Check authentication on component mount
-  //   const token = localStorage.getItem('token');
-  //   if (!token) {
-  //     router.push('/login');
-  //   }
-  // }, [router]);
+  const [isLoadingStrategy, setIsLoadingStrategy] = useState(false);
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+  const router = useRouter();
+  const { saveStrategyData, updateStrategyData, isLoading, error, resetError } = useStrategyApi();
 
   const [formData, setFormData] = useState<FormData>({
     strategyName: "",
@@ -122,6 +165,75 @@ const StrategyCreator: React.FC = () => {
     maxTradeCycle: "1",
     legs: [],
   });
+
+  // Real-time validation
+  const {
+    validationResults,
+    formValidation,
+    isFieldValid,
+    getFieldErrors,
+    getFieldWarnings,
+    isFormValid,
+    getFormErrors,
+    getFormWarnings
+  } = useValidation(formData, strategyType, selectedInstruments, orderLegs);
+
+  // Load existing strategy data when in edit mode
+  useEffect(() => {
+    if (isEditMode && strategyId) {
+      loadStrategyData();
+    }
+  }, [isEditMode, strategyId]);
+
+  const loadStrategyData = async () => {
+    setIsLoadingStrategy(true);
+    try {
+      const token = Cookies.get('token');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || 'http://103.189.173.82:4000/api'}/user/strategies/${strategyId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const strategy = response.data.data;
+      
+      // Populate form with existing strategy data
+      setFormData({
+        strategyName: strategy.strategyName || "",
+        orderType: strategy.orderType || "MIS",
+        startTime: strategy.startTime || "09:16",
+        squareOff: strategy.squareOffTime || "03:15",
+        noTradeAfter: strategy.noTradeAfter || "03:15",
+        selectedDays: strategy.tradeDays || ["MON", "TUE", "WED", "THU", "FRI"],
+        maxProfit: strategy.riskManagement?.exitWhenProfit || 5000,
+        maxLoss: strategy.riskManagement?.exitWhenLoss || 3000,
+        profitTrailing: strategy.profitTrailing || "No Trailing",
+        trailingConfig: strategy.trailingConfig || {},
+        transactionType: strategy.transactionType || "Both Side",
+        chartType: strategy.chartType || "Candle",
+        interval: strategy.interval || "5 Min",
+        longEntryConditions: strategy.longEntryConditions || [{ indicator: "", comparator: "", value: "" }],
+        shortEntryConditions: strategy.shortEntryConditions || [{ indicator: "", comparator: "", value: "" }],
+        exitConditions: strategy.exitConditions || [],
+        useCombinedChart: strategy.useCombinedChart || false,
+        maxTradeCycle: strategy.maxTradeCycle || "1",
+        legs: strategy.legs || [],
+      });
+
+      setStrategyType(strategy.strategyType || "Time Based");
+      setSelectedInstruments(strategy.instruments || []);
+      setOrderLegs(strategy.legs || []);
+    } catch (err) {
+      console.error('Error loading strategy:', err);
+      alert('Failed to load strategy data');
+    } finally {
+      setIsLoadingStrategy(false);
+    }
+  };
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -241,19 +353,49 @@ const StrategyCreator: React.FC = () => {
     }));
   };
 
+  const handleSelectTemplate = (template: StrategyTemplate) => {
+    // Populate form with template data
+    setFormData({
+      strategyName: `${template.templateName} - Copy`,
+      orderType: template.orderType,
+      startTime: template.startTime,
+      squareOff: template.squareOffTime,
+      noTradeAfter: template.noTradeAfter,
+      selectedDays: template.tradeDays,
+      maxProfit: template.riskManagement.exitWhenProfit,
+      maxLoss: template.riskManagement.exitWhenLoss,
+      profitTrailing: template.profitTrailing,
+      trailingConfig: template.trailingConfig,
+      transactionType: template.transactionType || "Both Side",
+      chartType: template.chartType || "Candle",
+      interval: template.interval || "5 Min",
+      longEntryConditions: template.longEntryConditions || [{ indicator: "", comparator: "", value: "" }],
+      shortEntryConditions: template.shortEntryConditions || [{ indicator: "", comparator: "", value: "" }],
+      exitConditions: template.exitConditions || [],
+      useCombinedChart: template.useCombinedChart || false,
+      maxTradeCycle: template.maxTradeCycle || "1",
+      legs: template.legs || [],
+    });
+
+    setStrategyType(template.strategyType);
+    setSelectedInstruments(template.instruments);
+    setOrderLegs(template.legs || []);
+  };
+
 const handleSubmit = async () => {
-  if (!formData.strategyName) {
-    alert("Please enter a strategy name");
+  // Enhanced validation with better error messages
+  if (!formData.strategyName.trim()) {
+    alert("Please enter a strategy name to continue.");
     return;
   }
 
   if (selectedInstruments.length === 0) {
-    alert("Please select at least one instrument");
+    alert("Please select at least one trading instrument for your strategy.");
     return;
   }
 
   if (strategyType === "Time Based" && orderLegs.length === 0) {
-    alert("Please add at least one order leg");
+    alert("Please add at least one order leg for your time-based strategy.");
     return;
   }
 
@@ -267,13 +409,13 @@ const handleSubmit = async () => {
     );
     
     if (!hasLongConditions && !hasShortConditions) {
-      alert("Please configure at least one entry condition (Long or Short)");
+      alert("Please configure at least one entry condition (Long or Short) for your indicator-based strategy.");
       return;
     }
 
     // Validate that at least one option leg is configured
     if (!formData.legs || formData.legs.length === 0) {
-      alert("Please add at least one option leg for the Indicator Based strategy");
+      alert("Please add at least one option leg for your indicator-based strategy.");
       return;
     }
   }
@@ -334,21 +476,44 @@ const handleSubmit = async () => {
   }
 
   try {
-    await saveStrategyData(payload);
-    alert('Strategy saved successfully!');
-    // Reset form after successful save
+    if (isEditMode && strategyId) {
+      await updateStrategyData(strategyId, payload);
+      alert('Strategy updated successfully! You can now view it in your strategies list.');
+    } else {
+      await saveStrategyData(payload);
+      alert('Strategy created successfully! You can now view it in your strategies list.');
+    }
+    
+    // Reset form after successful save/update
     router.push('/dashboard/strategies');
-    setFormData({
-      ...formData,
-      strategyName: "",
-    });
-    setSelectedInstruments([]);
-    setOrderLegs([]);
+    if (!isEditMode) {
+      setFormData({
+        ...formData,
+        strategyName: "",
+      });
+      setSelectedInstruments([]);
+      setOrderLegs([]);
+    }
   } catch (error) {
-    // Error is already handled by the hook
-    console.error('Strategy creation failed:', error);
+    // Enhanced error handling
+    const errorMessage = getStrategySpecificErrors(error);
+    console.error(`Strategy ${isEditMode ? 'update' : 'creation'} failed:`, error);
+    alert(`Failed to ${isEditMode ? 'update' : 'save'} strategy: ${errorMessage}`);
   }
 };
+
+  if (isLoadingStrategy) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 bg-white">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading strategy data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -360,6 +525,20 @@ const handleSubmit = async () => {
         )}
         
         <div className="space-y-8">
+          {/* Template Selection Button */}
+          {!isEditMode && (
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Create New Strategy</h2>
+              <button
+                type="button"
+                onClick={() => setIsTemplateSelectorOpen(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+              >
+                Use Template
+              </button>
+            </div>
+          )}
+          
           <StrategyTypeSelector
             strategyType={strategyType}
             onStrategyTypeChange={setStrategyType}
@@ -413,6 +592,13 @@ const handleSubmit = async () => {
             onInputChange={handleInputChange}
             onSubmit={handleSubmit}
             isSubmitting={isLoading}
+            isEditMode={isEditMode}
+            getFieldErrors={getFieldErrors}
+            getFieldWarnings={getFieldWarnings}
+            isFieldValid={isFieldValid}
+            isFormValid={isFormValid}
+            getFormErrors={getFormErrors}
+            getFormWarnings={getFormWarnings}
           />
         </div>
       </div>
@@ -423,8 +609,16 @@ const handleSubmit = async () => {
         onSelectInstruments={handleSelectInstruments}
         initiallySelected={selectedInstruments}
       />
+
+      <TemplateSelector
+        isOpen={isTemplateSelectorOpen}
+        onClose={() => setIsTemplateSelectorOpen(false)}
+        onSelectTemplate={handleSelectTemplate}
+        strategyType={strategyType}
+      />
     </>
   );
 };
 
 export default StrategyCreator;
+export { StrategyCreator as StrategyForm };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface InstrumentsData {
   categories?: {
@@ -24,7 +24,7 @@ export const useInstruments = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/instruments`);
+      const response = await fetch(`${API_BASE_URL}/instruments`);
       if (!response.ok) {
         throw new Error('Failed to fetch instruments');
       }
@@ -45,7 +45,7 @@ export const useInstruments = () => {
     }
 
     try {
-      let url = `${API_BASE_URL}/auth/instruments/search?query=${encodeURIComponent(query)}`;
+      let url = `${API_BASE_URL}/instruments/search?query=${encodeURIComponent(query)}`;
       if (category) {
         url += `&category=${encodeURIComponent(category)}`;
       }
@@ -65,7 +65,7 @@ export const useInstruments = () => {
 
   const getInstrumentsByCategory = async (category: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/instruments/category/${category}`);
+      const response = await fetch(`${API_BASE_URL}/instruments/category/${category}`);
       if (!response.ok) {
         throw new Error('Failed to fetch instruments by category');
       }
@@ -79,7 +79,7 @@ export const useInstruments = () => {
   };
 
   // Get instruments for a specific category from cached data
-  const getCurrentCategoryInstruments = (category: string): string[] => {
+  const getCurrentCategoryInstruments = useCallback((category: string): string[] => {
     if (!instrumentsData.categories) return [];
     
     switch (category) {
@@ -98,16 +98,16 @@ export const useInstruments = () => {
       default:
         return [];
     }
-  };
+  }, [instrumentsData.categories]);
 
   // Get all available categories
-  const getAvailableCategories = (): string[] => {
+  const getAvailableCategories = useCallback((): string[] => {
     if (!instrumentsData.categories) return [];
     
     return Object.keys(instrumentsData.categories).filter(
       category => (instrumentsData.categories as any)[category]?.length > 0
     );
-  };
+  }, [instrumentsData.categories]);
 
   return {
     instrumentsData,

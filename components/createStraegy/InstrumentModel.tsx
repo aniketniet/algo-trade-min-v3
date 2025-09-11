@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, Search, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { X, Search, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { useInstruments } from "@/hooks/useInstruments";
 
 interface InstrumentModalProps {
@@ -21,6 +21,8 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
   const [selectedInstruments, setSelectedInstruments] = useState<string[]>(initiallySelected);
   const [searchResults, setSearchResults] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(50);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const {
     instrumentsData,
@@ -63,18 +65,42 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
     return () => clearTimeout(timeoutId);
   }, [searchTerm, selectedCategory]);
 
-  // Get instruments for current category
-  const getCurrentCategoryInstrumentsList = (): string[] => {
+  // Get instruments for current category with memoization
+  const getCurrentCategoryInstrumentsList = useCallback((): string[] => {
     if (searchTerm.trim() && searchResults.length > 0) {
       return searchResults;
     }
     return getCurrentCategoryInstruments(selectedCategory);
-  };
+  }, [searchTerm, searchResults, selectedCategory, getCurrentCategoryInstruments]);
 
-  // Filter instruments based on search term (for local filtering)
-  const filteredInstruments = getCurrentCategoryInstrumentsList().filter((instrument: string) =>
-    instrument.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Memoized filtered instruments
+  const filteredInstruments = useMemo(() => {
+    const instruments = getCurrentCategoryInstrumentsList();
+    if (searchTerm.trim()) {
+      return instruments.filter((instrument: string) =>
+        instrument.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return instruments;
+  }, [getCurrentCategoryInstrumentsList, searchTerm]);
+
+  // Memoized displayed instruments to avoid infinite re-renders
+  const displayedInstruments = useMemo(() => {
+    return filteredInstruments.slice(0, visibleCount);
+  }, [filteredInstruments, visibleCount]);
+
+  // Load more instruments
+  const loadMoreInstruments = useCallback(() => {
+    setVisibleCount(prev => Math.min(prev + 50, filteredInstruments.length));
+  }, [filteredInstruments.length]);
+
+  // Toggle category expansion
+  const toggleCategory = useCallback((category: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  }, []);
 
   const handleConfirm = () => {
     onSelectInstruments(selectedInstruments);
@@ -163,25 +189,45 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
                   {searchTerm ? "No instruments found matching your search." : "No instruments available in this category."}
                 </div>
               ) : (
-                filteredInstruments.map((instrument: string) => {
-                  const isChecked = selectedInstruments.includes(instrument);
+                <>
+                  {/* Displayed instruments */}
+                  {displayedInstruments.map((instrument: string) => {
+                    const isChecked = selectedInstruments.includes(instrument);
 
-                  return (
-                    <label
-                      key={instrument}
-                      className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-50"
-                    >
-                      <input
-                        type="radio"
-                        name="instrument"
-                        checked={isChecked}
-                        onChange={() => handleInstrumentSelect(instrument)}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-sm">{instrument}</span>
-                    </label>
-                  );
-                })
+                    return (
+                      <label
+                        key={instrument}
+                        className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-50"
+                      >
+                        <input
+                          type="radio"
+                          name="instrument"
+                          checked={isChecked}
+                          onChange={() => handleInstrumentSelect(instrument)}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-sm">{instrument}</span>
+                      </label>
+                    );
+                  })}
+                  
+                  {/* Load more button */}
+                  {displayedInstruments.length < filteredInstruments.length && (
+                    <div className="text-center py-4">
+                      <button
+                        onClick={loadMoreInstruments}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                      >
+                        Load More ({filteredInstruments.length - displayedInstruments.length} remaining)
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Results summary */}
+                  <div className="text-xs text-gray-500 text-center pt-2 border-t">
+                    Showing {displayedInstruments.length} of {filteredInstruments.length} instruments
+                  </div>
+                </>
               )}
             </div>
           )}

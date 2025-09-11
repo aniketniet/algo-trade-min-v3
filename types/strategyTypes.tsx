@@ -9,14 +9,14 @@ export interface OrderLeg {
   strikeType: string;
   strikeValue: string;
   stopLoss: {
-    type: string;
+    type: "points" | "percent";
     value: number;
-    trigger: string;
+    trigger: "price" | "premium";
   };
   target: {
-    type: string;
+    type: "points" | "percent";
     value: number;
-    trigger: string;
+    trigger: "price" | "premium";
   };
 }
 
