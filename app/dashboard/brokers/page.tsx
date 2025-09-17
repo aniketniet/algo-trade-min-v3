@@ -35,6 +35,10 @@ export default function BrokersPage() {
   const [brokers, setBrokers] = useState<any[]>([]);
   const [engineStatuses, setEngineStatuses] = useState<Record<string, string>>({});
   const [engineLoadingStates, setEngineLoadingStates] = useState<Record<string, boolean>>({});
+  const [tokenValidationStates, setTokenValidationStates] = useState<Record<string, { isValid: boolean; isLoading: boolean }>>({});
+  const [showConnectButton, setShowConnectButton] = useState<Record<string, boolean>>({});
+  const [profileData, setProfileData] = useState<Record<string, any>>({});
+  const [profileLoadingStates, setProfileLoadingStates] = useState<Record<string, boolean>>({});
   const base_url = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL;
 
   const getConnectedBrokers = async () => {
@@ -61,6 +65,78 @@ export default function BrokersPage() {
     }
   };
 
+  const validateAngelOneTokens = async (brokerId: string) => {
+    try {
+      setTokenValidationStates(prev => ({
+        ...prev,
+        [brokerId]: { isValid: false, isLoading: true }
+      }));
+
+      const token = Cookies.get("token");
+      const response = await axios.get(`${base_url}/user/AG-profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // If we get here, tokens are valid
+      setTokenValidationStates(prev => ({
+        ...prev,
+        [brokerId]: { isValid: true, isLoading: false }
+      }));
+      setShowConnectButton(prev => ({
+        ...prev,
+        [brokerId]: false
+      }));
+
+      // Store profile data
+      setProfileData(prev => ({
+        ...prev,
+        [brokerId]: response.data
+      }));
+
+    } catch (err) {
+      console.error("Error validating Angel One tokens:", err);
+      setTokenValidationStates(prev => ({
+        ...prev,
+        [brokerId]: { isValid: false, isLoading: false }
+      }));
+      setShowConnectButton(prev => ({
+        ...prev,
+        [brokerId]: true
+      }));
+    }
+  };
+
+  const fetchProfileData = async (brokerId: string) => {
+    try {
+      setProfileLoadingStates(prev => ({
+        ...prev,
+        [brokerId]: true
+      }));
+
+      const token = Cookies.get("token");
+      const response = await axios.get(`${base_url}/user/AG-profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setProfileData(prev => ({
+        ...prev,
+        [brokerId]: response.data
+      }));
+
+    } catch (err) {
+      console.error("Error fetching profile data:", err);
+    } finally {
+      setProfileLoadingStates(prev => ({
+        ...prev,
+        [brokerId]: false
+      }));
+    }
+  };
+
   const getTradeEngineStatus = async (brokerId: string) => {
     try {
       const token = Cookies.get("token");
@@ -75,6 +151,33 @@ export default function BrokersPage() {
       setEngineStatuses(prev => ({
         ...prev,
         [brokerId]: "Stopped"
+      }));
+    }
+  };
+
+  const connectAngelOne = async (brokerId: string) => {
+    try {
+      setTokenValidationStates(prev => ({
+        ...prev,
+        [brokerId]: { isValid: false, isLoading: true }
+      }));
+
+      const token = Cookies.get("token");
+      
+      // Get the Angel One connection URL from backend
+      const { data } = await axios.get(`${base_url}/user/connect-angelone`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      // Direct redirect to Angel One publisher login
+      window.location.href = data.url;
+
+    } catch (err) {
+      console.error("Error connecting to Angel One:", err);
+      alert("Failed to connect to Angel One. Please try again.");
+      setTokenValidationStates(prev => ({
+        ...prev,
+        [brokerId]: { isValid: false, isLoading: false }
       }));
     }
   };
@@ -127,9 +230,18 @@ export default function BrokersPage() {
   }, []);
 
   useEffect(() => {
-    // Fetch trade engine status for each broker
+    // Fetch trade engine status and validate tokens for each broker
     brokers.forEach(broker => {
       getTradeEngineStatus(broker.id);
+      // Validate Angel One tokens if it's an Angel One broker
+      if (broker.BrokerName === 'AngelOne' || broker.BrokerName === 'Angel One') {
+        // Set initial state for showConnectButton based on broker login status
+        setShowConnectButton(prev => ({
+          ...prev,
+          [broker.id]: broker.BrokerLoginStatus !== true
+        }));
+        validateAngelOneTokens(broker.id);
+      }
     });
   }, [brokers]);
 
@@ -314,79 +426,169 @@ export default function BrokersPage() {
                     
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={
-                        broker.BrokerLoginStatus === true
-                          ? "border-green-200 text-green-700"
-                          : "border-red-200 text-red-700"
-                      }
-                    >
-                      {broker.BrokerLoginStatus === true ? (
-                        <Wifi className="mr-1 h-3 w-3" />
-                      ) : (
-                        <WifiOff className="mr-1 h-3 w-3" />
-                      )}
-                      {broker.BrokerLoginStatus === true ? "Connected" : "Disconnected"}
-                    </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Sync Account
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Disconnect
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Show connect button if tokens are invalid */}
+                    {showConnectButton[broker.id] && (broker.BrokerName === 'AngelOne' || broker.BrokerName === 'Angel One') ? (
+                      <Button
+                        onClick={() => connectAngelOne(broker.id)}
+                        disabled={tokenValidationStates[broker.id]?.isLoading}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        size="sm"
+                      >
+                        {tokenValidationStates[broker.id]?.isLoading ? (
+                          <>
+                            <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                            Connecting...
+                          </>
+                        ) : (
+                          "Connect"
+                        )}
+                      </Button>
+                    ) : (
+                      <>
+                        <Badge
+                          variant="outline"
+                          className={
+                            broker.BrokerLoginStatus === true
+                              ? "border-green-200 text-green-700"
+                              : "border-red-200 text-red-700"
+                          }
+                        >
+                          {broker.BrokerLoginStatus === true ? (
+                            <Wifi className="mr-1 h-3 w-3" />
+                          ) : (
+                            <WifiOff className="mr-1 h-3 w-3" />
+                          )}
+                          {broker.BrokerLoginStatus === true ? "Connected" : "Disconnected"}
+                        </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Disconnect
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardHeader>
-              {/* <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-600">Account Balance</p>
-                      <p className="text-lg font-semibold">{broker.balance}</p>
+              <CardContent>
+                {/* Show profile data if broker is connected and profile data is available */}
+                {broker.BrokerLoginStatus === true && tokenValidationStates[broker.id]?.isValid && profileData[broker.id] ? (
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-gray-600">Client Code</p>
+                        <p className="text-lg font-semibold">
+                          {profileData[broker.id]?.data?.clientcode || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Name</p>
+                        <p className="text-lg font-semibold">
+                          {profileData[broker.id]?.data?.name || 'N/A'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Equity</p>
-                      <p className="text-lg font-semibold">{broker.equity}</p>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-gray-600">Email</p>
+                        <p className="text-lg font-semibold">
+                          {profileData[broker.id]?.data?.email || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Mobile</p>
+                        <p className="text-lg font-semibold">
+                          {profileData[broker.id]?.data?.mobile || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-gray-600">Exchange Enabled</p>
+                        <p className="text-lg font-semibold">
+                          {profileData[broker.id]?.data?.exchanges?.join(', ') || 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Product Types</p>
+                        <p className="text-lg font-semibold">
+                          {profileData[broker.id]?.data?.productTypes?.join(', ') || 'N/A'}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-600">Margin Available</p>
-                      <p className="text-lg font-semibold">{broker.margin}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Total Trades</p>
-                      <p className="text-lg font-semibold">
-                        {broker.trades.toLocaleString()}
-                      </p>
+                ) : broker.BrokerLoginStatus === true && tokenValidationStates[broker.id]?.isValid ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <RefreshCw className="h-6 w-6 animate-spin text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Loading profile data...</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fetchProfileData(broker.id)}
+                        className="mt-2"
+                        disabled={profileLoadingStates[broker.id]}
+                      >
+                        {profileLoadingStates[broker.id] ? (
+                          <>
+                            <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          "Refresh Profile"
+                        )}
+                      </Button>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-gray-600">Commission Rate</p>
-                      <p className="text-lg font-semibold">
-                        {broker.commission}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Last Sync</p>
-                      <p className="text-sm text-gray-500">{broker.lastSync}</p>
+                ) : (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <WifiOff className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Broker not connected</p>
+                      <p className="text-xs text-gray-400 mt-1 mb-4">Connect to view profile data</p>
+                      {/* Show connect button for Angel One brokers */}
+                      {(broker.BrokerName === 'AngelOne' || broker.BrokerName === 'Angel One') && (
+                        <Button
+                          onClick={() => connectAngelOne(broker.id)}
+                          disabled={tokenValidationStates[broker.id]?.isLoading}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          size="sm"
+                        >
+                          {tokenValidationStates[broker.id]?.isLoading ? (
+                            <>
+                              <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                              Connecting...
+                            </>
+                          ) : (
+                            "Connect Angel One"
+                          )}
+                        </Button>
+                      )}
+                      
+                      {/* Fallback connect button for any other broker */}
+                      {!(broker.BrokerName === 'AngelOne' || broker.BrokerName === 'Angel One') && (
+                        <Button
+                          onClick={() => {
+                            alert(`Connect functionality for ${broker.BrokerName} is not yet implemented.`);
+                          }}
+                          className="bg-gray-600 hover:bg-gray-700 text-white"
+                          size="sm"
+                        >
+                          Connect {broker.BrokerName}
+                        </Button>
+                      )}
                     </div>
                   </div>
-                </div>
-              </CardContent> */}
+                )}
+              </CardContent>
             </Card>
           ))}
         </div>

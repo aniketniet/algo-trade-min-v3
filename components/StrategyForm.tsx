@@ -28,7 +28,7 @@ const InstrumentsSection: React.FC<InstrumentsSectionProps> = ({
   onRemoveInstrument,
 }) => (
   <div>
-    <h3 className="font-medium mb-4">Select Instruments</h3>
+    <h3 className="font-medium mb-4">Select Instrument</h3>
     {selectedInstruments.length > 0 ? (
       <div className="flex flex-wrap gap-2">
         {selectedInstruments.map((instrument) => (
@@ -53,7 +53,7 @@ const InstrumentsSection: React.FC<InstrumentsSectionProps> = ({
         className="w-48 h-24 border-2 border-dashed border-blue-300 rounded-lg flex flex-col items-center justify-center text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-colors"
       >
         <Plus className="w-6 h-6 mb-1" />
-        <span className="text-sm font-medium">Add Instruments</span>
+        <span className="text-sm font-medium">Add Instrument</span>
       </button>
     )}
   </div>
@@ -390,7 +390,7 @@ const handleSubmit = async () => {
   }
 
   if (selectedInstruments.length === 0) {
-    alert("Please select at least one trading instrument for your strategy.");
+    alert("Please select a trading instrument for your strategy.");
     return;
   }
 
@@ -529,13 +529,13 @@ const handleSubmit = async () => {
           {!isEditMode && (
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Create New Strategy</h2>
-              <button
+              {/* <button
                 type="button"
                 onClick={() => setIsTemplateSelectorOpen(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
               >
                 Use Template
-              </button>
+              </button> */}
             </div>
           )}
           

@@ -63,6 +63,21 @@ export const useInstruments = () => {
     }
   };
 
+  const getAllInstrumentsForCategory = async (category: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/instruments/all/${category}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch all instruments for category');
+      }
+      
+      const result = await response.json();
+      return result.data || [];
+    } catch (err) {
+      console.error('Error fetching all instruments for category:', err);
+      return [];
+    }
+  };
+
   const getInstrumentsByCategory = async (category: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/instruments/category/${category}`);
@@ -116,6 +131,7 @@ export const useInstruments = () => {
     fetchInstruments,
     searchInstruments,
     getInstrumentsByCategory,
+    getAllInstrumentsForCategory,
     getCurrentCategoryInstruments,
     getAvailableCategories
   };

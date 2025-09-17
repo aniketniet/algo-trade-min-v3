@@ -34,11 +34,9 @@ export const strategyValidationRules: ValidationRule[] = [
     field: 'selectedInstruments',
     validator: (value: string[]) => {
       if (!value || value.length === 0) {
-        return 'Please select at least one instrument';
+        return 'Please select an instrument';
       }
-      if (value.length > 10) {
-        return 'Please select no more than 10 instruments';
-      }
+      // Single instrument selection - no need for upper limit check
       return null;
     }
   },

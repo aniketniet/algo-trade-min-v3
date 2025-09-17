@@ -31,7 +31,7 @@ const TimeBasedStrategy: React.FC<TimeBasedStrategyProps> = ({
 
   const addOrderLeg = () => {
     if (selectedInstruments.length === 0) {
-      alert("Please select instruments first");
+      alert("Please select an instrument first");
       return;
     }
 
@@ -296,7 +296,7 @@ const TimeBasedStrategy: React.FC<TimeBasedStrategyProps> = ({
           <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Order Legs</h3>
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <span className="text-sm text-gray-600">
-              Selected Instruments: {selectedInstruments.length}
+              Selected Instrument: {selectedInstruments.length > 0 ? selectedInstruments[0] : 'None'}
             </span>
             <button
               onClick={addOrderLeg}

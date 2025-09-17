@@ -23,6 +23,8 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [visibleCount, setVisibleCount] = useState(50);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [allInstrumentsLoaded, setAllInstrumentsLoaded] = useState<Record<string, boolean>>({});
+  const [allInstruments, setAllInstruments] = useState<Record<string, string[]>>({});
 
   const {
     instrumentsData,
@@ -30,6 +32,7 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
     error,
     fetchInstruments,
     searchInstruments,
+    getAllInstrumentsForCategory,
     getCurrentCategoryInstruments,
     getAvailableCategories
   } = useInstruments();
@@ -48,11 +51,30 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
     setSelectedInstruments(initiallySelected);
   }, [initiallySelected]);
 
-  // Handle search with debouncing
+  // Handle search with debouncing and lazy loading
   useEffect(() => {
     const handleSearch = async () => {
       if (searchTerm.trim()) {
         setIsSearching(true);
+        
+        // For Equity and Futures, load all instruments if not already loaded
+        if ((selectedCategory === 'Equity' || selectedCategory === 'Futures') && !allInstrumentsLoaded[selectedCategory]) {
+          try {
+            const allInstrumentsForCategory = await getAllInstrumentsForCategory(selectedCategory.toLowerCase());
+            setAllInstruments(prev => ({
+              ...prev,
+              [selectedCategory]: allInstrumentsForCategory
+            }));
+            setAllInstrumentsLoaded(prev => ({
+              ...prev,
+              [selectedCategory]: true
+            }));
+          } catch (error) {
+            console.error('Error loading all instruments:', error);
+          }
+        }
+        
+        // Perform search
         const results = await searchInstruments(searchTerm, selectedCategory);
         setSearchResults(results);
         setIsSearching(false);
@@ -63,23 +85,31 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
 
     const timeoutId = setTimeout(handleSearch, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, allInstrumentsLoaded, getAllInstrumentsForCategory]);
 
   // Get instruments for current category with memoization
   const getCurrentCategoryInstrumentsList = useCallback((): string[] => {
     if (searchTerm.trim() && searchResults.length > 0) {
       return searchResults;
     }
+    
+    // For Equity and Futures, if all instruments are loaded, use them for search
+    if ((selectedCategory === 'Equity' || selectedCategory === 'Futures') && allInstrumentsLoaded[selectedCategory]) {
+      return allInstruments[selectedCategory] || [];
+    }
+    
     return getCurrentCategoryInstruments(selectedCategory);
-  }, [searchTerm, searchResults, selectedCategory, getCurrentCategoryInstruments]);
+  }, [searchTerm, searchResults, selectedCategory, getCurrentCategoryInstruments, allInstrumentsLoaded, allInstruments]);
 
   // Memoized filtered instruments
   const filteredInstruments = useMemo(() => {
     const instruments = getCurrentCategoryInstrumentsList();
     if (searchTerm.trim()) {
-      return instruments.filter((instrument: string) =>
-        instrument.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      return instruments.filter((instrument: any) => {
+        // Handle both string instruments and object instruments
+        const instrumentStr = typeof instrument === 'string' ? instrument : instrument.symbol || instrument.name || '';
+        return instrumentStr.toLowerCase().includes(searchTerm.toLowerCase());
+      });
     }
     return instruments;
   }, [getCurrentCategoryInstrumentsList, searchTerm]);
@@ -110,11 +140,28 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
   };
 
   const handleInstrumentSelect = (instrument: string) => {
-    // Allow multiple selection
-    if (selectedInstruments.includes(instrument)) {
-      setSelectedInstruments(selectedInstruments.filter(i => i !== instrument));
-    } else {
-      setSelectedInstruments([...selectedInstruments, instrument]);
+    // Allow only single selection
+    setSelectedInstruments([instrument]);
+  };
+
+  const handleLoadAllInstruments = async () => {
+    if (allInstrumentsLoaded[selectedCategory]) return;
+    
+    setIsSearching(true);
+    try {
+      const allInstrumentsForCategory = await getAllInstrumentsForCategory(selectedCategory.toLowerCase());
+      setAllInstruments(prev => ({
+        ...prev,
+        [selectedCategory]: allInstrumentsForCategory
+      }));
+      setAllInstrumentsLoaded(prev => ({
+        ...prev,
+        [selectedCategory]: true
+      }));
+    } catch (error) {
+      console.error('Error loading all instruments:', error);
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -126,7 +173,7 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
         {/* Header */}
         <div className="p-6 border-b">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Select Instruments</h2>
+            <h2 className="text-xl font-semibold">Select Instrument</h2>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <X className="w-6 h-6" />
             </button>
@@ -163,6 +210,19 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
               </button>
             ))}
           </div>
+
+          {/* Load All button for Equity and Futures */}
+          {/* {(selectedCategory === 'Equity' || selectedCategory === 'Futures') && !allInstrumentsLoaded[selectedCategory] && (
+            <div className="mb-4">
+              <button
+                onClick={handleLoadAllInstruments}
+                disabled={isSearching}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 text-sm"
+              >
+                {isSearching ? 'Loading...' : `Load All ${selectedCategory} Instruments`}
+              </button>
+            </div>
+          )} */}
         </div>
 
         {/* Instruments */}
@@ -191,22 +251,24 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
               ) : (
                 <>
                   {/* Displayed instruments */}
-                  {displayedInstruments.map((instrument: string) => {
-                    const isChecked = selectedInstruments.includes(instrument);
+                  {displayedInstruments.map((instrument: any) => {
+                    // Handle both string instruments and object instruments
+                    const instrumentStr = typeof instrument === 'string' ? instrument : instrument.symbol || instrument.name || '';
+                    const isChecked = selectedInstruments.includes(instrumentStr);
 
                     return (
                       <label
-                        key={instrument}
+                        key={instrumentStr}
                         className="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-50"
                       >
                         <input
                           type="radio"
                           name="instrument"
                           checked={isChecked}
-                          onChange={() => handleInstrumentSelect(instrument)}
+                          onChange={() => handleInstrumentSelect(instrumentStr)}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-sm">{instrument}</span>
+                        <span className="text-sm">{instrumentStr}</span>
                       </label>
                     );
                   })}
@@ -236,7 +298,7 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
         {/* Footer */}
         <div className="p-6 border-t flex justify-between items-center">
           <span className="text-sm text-gray-600">
-            {selectedInstruments.length} instrument selected
+            {selectedInstruments.length > 0 ? `${selectedInstruments[0]}` : 'No instrument selected'}
           </span>
           <div className="flex gap-3">
             <button
@@ -254,7 +316,7 @@ const InstrumentModal: React.FC<InstrumentModalProps> = ({
                   : "bg-blue-600 text-white hover:bg-blue-700"
               }`}
             >
-              Confirm
+              Select Instrument
             </button>
           </div>
         </div>

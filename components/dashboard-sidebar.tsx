@@ -44,7 +44,7 @@ const navLinks = [
 const DashboardSidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
-  const { marketData: indices, loading, error, marketStatus, lastUpdate } = useRealTimeMarketData()
+  const { marketData: indices, loading, error, isConnected, lastUpdate } = useRealTimeMarketData()
 
   const renderNavLink = (href: string, label: string, icon: React.ReactNode) => {
     const isActive = pathname === href
@@ -85,18 +85,16 @@ const DashboardSidebar = () => {
           Indices
         </h3>
         <div className="flex items-center gap-2">
-          {marketStatus && (
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-              marketStatus.isOpen 
-                ? 'bg-green-100 text-green-700' 
-                : 'bg-gray-100 text-gray-600'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                marketStatus.isOpen ? 'bg-green-500' : 'bg-gray-400'
-              }`}></div>
-              {marketStatus.isOpen ? 'Open' : 'Closed'}
-            </div>
-          )}
+          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+            isConnected 
+              ? 'bg-green-100 text-green-700' 
+              : 'bg-red-100 text-red-700'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              isConnected ? 'bg-green-500' : 'bg-red-500'
+            }`}></div>
+            {isConnected ? 'Live' : 'Offline'}
+          </div>
           {loading && (
             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
           )}
@@ -139,13 +137,13 @@ const DashboardSidebar = () => {
           <p className="text-xs text-red-500">{error}</p>
         </div>
       )}
-      {lastUpdate && (
+      {/* {lastUpdate && (
         <div className="px-4 mt-2">
           <p className="text-xs text-gray-400">
             Last update: {new Date(lastUpdate).toLocaleTimeString()}
           </p>
         </div>
-      )}
+      )} */}
     </div>
   )
 

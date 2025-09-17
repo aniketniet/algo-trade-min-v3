@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
-import axios from 'axios'
-import Cookies from 'js-cookie'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface MarketData {
   name: string
@@ -10,181 +8,202 @@ interface MarketData {
   change: string
   changeType: 'positive' | 'negative'
   symbol: string
-  fullName?: string
-  lastPrice?: number
-  previousClose?: number
-  dayChange?: string
-  dayChangePercent?: string
-  volume?: number
+  token?: string
   timestamp?: string
-  error?: string
 }
 
-interface MarketStatus {
-  isOpen: boolean
-  nextOpen: string
-  currentTime: string
-  timezone: string
+interface WebSocketMessage {
+  type: string
+  data: MarketData | MarketData[]
 }
 
-interface MarketDataResponse {
-  Status: string
-  Message: string
-  Data: {
-    indices: MarketData[]
-    timestamp: string
-    source: string
-    marketStatus: MarketStatus
-  }
+interface UseRealTimeMarketDataReturn {
+  marketData: MarketData[]
+  loading: boolean
+  error: string | null
+  isConnected: boolean
+  lastUpdate: Date | null
+  reconnect: () => void
 }
 
-export const useRealTimeMarketData = () => {
-  const [marketData, setMarketData] = useState<MarketData[]>([])
-  const [loading, setLoading] = useState(false)
+export const useRealTimeMarketData = (): UseRealTimeMarketDataReturn => {
+  const [marketData, setMarketData] = useState<MarketData[]>([
+    { name: "NIFTY50", value: "0.00", change: "0.00", changeType: "positive", symbol: "NSE:NIFTY50" },
+    { name: "BANKNIFTY", value: "0.00", change: "0.00", changeType: "positive", symbol: "NSE:BANKNIFTY" },
+    { name: "FINNIFTY", value: "0.00", change: "0.00", changeType: "positive", symbol: "NSE:FINNIFTY" },
+  ])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null)
-  const [lastUpdate, setLastUpdate] = useState<string | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  
+  const wsRef = useRef<WebSocket | null>(null)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const reconnectAttempts = useRef(0)
+  const maxReconnectAttempts = 5
+  const reconnectDelay = 3000
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || "http://103.189.173.82:4000/api"
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    
+  const connect = useCallback(() => {
     try {
-      const token = Cookies.get("token")
-      if (!token) {
-        throw new Error("Authentication token not found")
-      }
-
-      const response = await axios.get(
-        `${API_BASE_URL}/market-data/indices`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-
-      if (response.data.Status === "Success") {
-        const data = response.data.Data
-        setMarketData(data.indices)
-        setMarketStatus(data.marketStatus)
-        setLastUpdate(data.timestamp)
-      } else {
-        throw new Error(response.data.Message || "Failed to fetch market data")
-      }
-    } catch (err: any) {
-      console.error('Error fetching market data:', err)
-      setError(err?.response?.data?.Message || err.message || 'Failed to fetch market data')
+      setError(null)
       
-      // Fallback to static data if API fails
-      setMarketData([
-        { name: "NIFTY", value: "24687.70", change: "-0.25", changeType: "negative", symbol: "NSE:NIFTY" },
-        { name: "BNF", value: "55861.40", change: "+0.20", changeType: "positive", symbol: "NSE:BANKNIFTY" },
-        { name: "FN", value: "26417.10", change: "-0.31", changeType: "negative", symbol: "NSE:CNXFINANCE" },
-      ])
-    } finally {
+      // Determine WebSocket URL based on environment
+      const wsUrl = process.env.NODE_ENV === 'production' 
+        ? `wss://${window.location.host}/ws/market-data`
+        : 'ws://localhost:4000/ws/market-data'
+      
+      console.log('[WS] Connecting to:', wsUrl)
+      
+      wsRef.current = new WebSocket(wsUrl)
+      
+      wsRef.current.onopen = () => {
+        console.log('[WS] Connected to market data stream')
+        setIsConnected(true)
+        setLoading(false)
+        reconnectAttempts.current = 0
+        
+        // Send ping to keep connection alive
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }))
+        }
+      }
+      
+      wsRef.current.onmessage = (event) => {
+        try {
+          const message: WebSocketMessage = JSON.parse(event.data)
+          console.log('[WS] Received message:', message)
+          
+          switch (message.type) {
+            case 'market_data':
+              // Single market data update
+              if (Array.isArray(message.data)) {
+                setMarketData(prevData => {
+                  const newData = [...prevData]
+                  message.data.forEach(update => {
+                    const index = newData.findIndex(item => item.name === update.name)
+                    if (index !== -1) {
+                      newData[index] = { ...newData[index], ...update }
+                    }
+                  })
+                  return newData
+                })
+              } else {
+                setMarketData(prevData => {
+                  const newData = [...prevData]
+                  const index = newData.findIndex(item => item.name === message.data.name)
+                  if (index !== -1) {
+                    newData[index] = { ...newData[index], ...message.data }
+                  }
+                  return newData
+                })
+              }
+              setLastUpdate(new Date())
+              break
+              
+            case 'market_data_batch':
+              // Initial batch of market data
+              if (Array.isArray(message.data)) {
+                setMarketData(message.data)
+                setLastUpdate(new Date())
+              }
+              break
+              
+            case 'pong':
+              // Response to ping
+              console.log('[WS] Received pong')
+              break
+              
+            default:
+              console.log('[WS] Unknown message type:', message.type)
+          }
+        } catch (err) {
+          console.error('[WS] Error parsing message:', err)
+          setError('Failed to parse market data')
+        }
+      }
+      
+      wsRef.current.onclose = (event) => {
+        console.log('[WS] Connection closed:', event.code, event.reason)
+        setIsConnected(false)
+        
+        // Attempt to reconnect if not a manual close
+        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
+          reconnectAttempts.current++
+          console.log(`[WS] Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})...`)
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect()
+          }, reconnectDelay * reconnectAttempts.current)
+        } else if (reconnectAttempts.current >= maxReconnectAttempts) {
+          setError('Failed to connect to market data stream after multiple attempts')
+          setLoading(false)
+        }
+      }
+      
+      wsRef.current.onerror = (error) => {
+        console.error('[WS] WebSocket error:', error)
+        setError('Connection error')
+        setIsConnected(false)
+      }
+      
+    } catch (err) {
+      console.error('[WS] Failed to create WebSocket connection:', err)
+      setError('Failed to connect to market data stream')
       setLoading(false)
     }
-  }, [API_BASE_URL])
+  }, [])
+
+  const disconnect = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+    
+    if (wsRef.current) {
+      wsRef.current.close(1000, 'Manual disconnect')
+      wsRef.current = null
+    }
+    
+    setIsConnected(false)
+  }, [])
+
+  const reconnect = useCallback(() => {
+    console.log('[WS] Manual reconnect requested')
+    disconnect()
+    reconnectAttempts.current = 0
+    setError(null)
+    setLoading(true)
+    connect()
+  }, [connect, disconnect])
 
   useEffect(() => {
-    // Initial fetch
-    fetchData()
+    connect()
     
-    // Set up real-time updates
-    let interval: NodeJS.Timeout | null = null
-    
-    const setupInterval = () => {
-      // Clear existing interval
-      if (interval) {
-        clearInterval(interval)
-      }
-      
-      // Set up new interval based on market status
-      if (marketStatus?.isOpen) {
-        // Market is open - update every 5 seconds for real-time data
-        interval = setInterval(fetchData, 5000)
-      } else {
-        // Market is closed - update every 30 seconds
-        interval = setInterval(fetchData, 30000)
-      }
-    }
-    
-    // Set up initial interval
-    setupInterval()
-    
-    // Re-setup interval when market status changes
-    const statusCheckInterval = setInterval(() => {
-      const now = new Date()
-      const istTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}))
-      const day = istTime.getDay()
-      const hour = istTime.getHours()
-      const minute = istTime.getMinutes()
-      const currentTime = hour * 100 + minute
-      
-      const marketStart = 915 // 9:15 AM
-      const marketEnd = 1530 // 3:30 PM
-      const isWeekday = day >= 1 && day <= 5
-      const isMarketHours = currentTime >= marketStart && currentTime <= marketEnd
-      const isMarketOpen = isWeekday && isMarketHours
-      
-      // If market status changed, re-setup interval
-      if (marketStatus?.isOpen !== isMarketOpen) {
-        setupInterval()
-      }
-    }, 60000) // Check every minute
-    
+    // Cleanup on unmount
     return () => {
-      if (interval) {
-        clearInterval(interval)
-      }
-      clearInterval(statusCheckInterval)
+      disconnect()
     }
-  }, [fetchData, marketStatus?.isOpen])
+  }, [connect, disconnect])
 
-  // Manual refresh function
-  const refresh = useCallback(() => {
-    fetchData()
-  }, [fetchData])
-
-  // Get single index data
-  const getSingleIndex = useCallback(async (symbol: string) => {
-    try {
-      const token = Cookies.get("token")
-      if (!token) {
-        throw new Error("Authentication token not found")
+  // Send periodic pings to keep connection alive
+  useEffect(() => {
+    if (!isConnected) return
+    
+    const pingInterval = setInterval(() => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }))
       }
+    }, 30000) // Ping every 30 seconds
+    
+    return () => clearInterval(pingInterval)
+  }, [isConnected])
 
-      const response = await axios.get(
-        `${API_BASE_URL}/market-data/indices/${symbol}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
-
-      if (response.data.Status === "Success") {
-        return response.data.Data
-      } else {
-        throw new Error(response.data.Message || "Failed to fetch index data")
-      }
-    } catch (err: any) {
-      console.error('Error fetching single index data:', err)
-      throw err
-    }
-  }, [API_BASE_URL])
-
-  return { 
-    marketData, 
-    loading, 
-    error, 
-    marketStatus,
+  return {
+    marketData,
+    loading,
+    error,
+    isConnected,
     lastUpdate,
-    refresh,
-    getSingleIndex
+    reconnect
   }
 }
-

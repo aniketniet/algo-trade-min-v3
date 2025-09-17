@@ -202,7 +202,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     )}
                   </div>
                   
-                  <div className="flex justify-between items-center">
+                  {/* <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-500">
                       by {template.createdBy}
                     </span>
@@ -215,7 +215,7 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     >
                       Use Template
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </div>
