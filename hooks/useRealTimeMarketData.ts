@@ -49,7 +49,7 @@ export const useRealTimeMarketData = (): UseRealTimeMarketDataReturn => {
       
       // Determine WebSocket URL based on environment
       const wsUrl = process.env.NODE_ENV === 'production' 
-        ? `wss://https://algotradexmind.com/server/api/ws/market-data`
+        ? `wss://algotradexmind.com/server/api/ws/market-data`
         : 'ws://localhost:4000/ws/market-data'
       
       console.log('[WS] Connecting to:', wsUrl)
