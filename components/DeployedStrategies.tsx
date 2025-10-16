@@ -18,6 +18,7 @@ import {
   X
 } from "lucide-react";
 import axios from "axios";
+// @ts-ignore
 import Cookies from "js-cookie";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +64,7 @@ const DeployedStrategies = () => {
   const [undeployLoadingStates, setUndeployLoadingStates] = useState<Record<string, boolean>>({});
   const { isTerminalOpen, currentStrategyId, openTerminal, closeTerminal } = useTerminal();
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || "http://103.189.173.82:4000/api";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || "http://localhost:4000/api";
 
   const fetchDeployedStrategies = async () => {
     try {
@@ -75,8 +76,10 @@ const DeployedStrategies = () => {
         throw new Error("Authentication token not found");
       }
 
+      // For now, we'll fetch active strategies from the strategies endpoint
+      // In the future, this should be a dedicated deployed strategies endpoint
       const response = await axios.get(
-        `${API_BASE_URL}/trading-engine/brokerwise-deployed-strategy`,
+        `${API_BASE_URL}/strategies?status=active`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -84,10 +87,43 @@ const DeployedStrategies = () => {
         }
       );
 
-      if (response.data.Status === "Success") {
-        setBrokerData(response.data.Data || []);
+      if (response.data.success) {
+        // Transform the data to match the expected format
+        const activeStrategies = response.data.data || [];
+        const mockBrokerData = [{
+          id: 'default-broker',
+          UserId: 'current-user',
+          BrokerId: 'default',
+          BrokerClientId: 'default-client',
+          BrokerName: 'Default Broker',
+          brokerLogoUrl: '/api/placeholder/32/32',
+          TradeEngineName: 'default-engine',
+          TradeEngineStatus: 'Running',
+          BrokerLoginStatus: true,
+          MaxProfit: null,
+          MaxLoss: null,
+          APIRedirectUrl: '',
+          APILoginUrl: '',
+          brokerAuthQueryString: '',
+          Running: activeStrategies.filter((s: any) => s.status === 'active').length,
+          Deployed: activeStrategies.length,
+          DeploymentDetail: activeStrategies.map((strategy: any) => ({
+            strategyId: strategy._id,
+            StrategyName: strategy.name,
+            UserId: 'current-user',
+            DeploymentDetail: [{
+              Running_Status: strategy.status === 'active',
+              MaxProfit: strategy.risk_management?.exit_when_profit || 0,
+              MaxLoss: strategy.risk_management?.exit_when_loss || 0,
+              TotalPnl: 0, // This would come from actual trading data
+              RunningPositionsCount: 0 // This would come from actual trading data
+            }],
+            OrderDetails: []
+          }))
+        }];
+        setBrokerData(mockBrokerData);
       } else {
-        throw new Error(response.data.Message || "Failed to fetch deployed strategies");
+        throw new Error(response.data.message || "Failed to fetch deployed strategies");
       }
     } catch (err: any) {
       console.error("Error fetching deployed strategies:", err);
@@ -105,15 +141,14 @@ const DeployedStrategies = () => {
       }));
 
       const token = Cookies.get("token");
-      const requestBody = {
-        TradeEngineName: `${brokerId}_${Date.now()}`,
-        BrokerClientId: brokerId,
-        ConnectOptions: enabled ? "Start" : "Stop"
-      };
-
+      // For now, we'll simulate the trade engine toggle
+      // In the future, this should be a dedicated trade engine endpoint
       const response = await axios.post(
-        `${API_BASE_URL}/trading-engine/start-stop-trade-engine`,
-        requestBody,
+        `${API_BASE_URL}/trading-engine/toggle`,
+        { 
+          brokerId,
+          enabled 
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -121,11 +156,11 @@ const DeployedStrategies = () => {
         }
       );
 
-      if (response.data.Status === "Success") {
+      if (response.data.success) {
         // Refresh the data to get updated status
         await fetchDeployedStrategies();
       } else {
-        throw new Error(response.data.Message || "Failed to toggle trade engine");
+        throw new Error(response.data.message || "Failed to toggle trade engine");
       }
     } catch (err: any) {
       console.error(`Error ${enabled ? 'starting' : 'stopping'} trade engine:`, err);
@@ -150,13 +185,10 @@ const DeployedStrategies = () => {
       }));
 
       const token = Cookies.get("token");
-      const requestBody = {
-        StrategyId: strategyId
-      };
-
+      // Use the strategy toggle API to stop the strategy
       const response = await axios.post(
-        `${API_BASE_URL}/trading-engine/de-deploy-strategy`,
-        requestBody,
+        `${API_BASE_URL}/strategies/${strategyId}/toggle`,
+        { action: 'stop' },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -164,12 +196,12 @@ const DeployedStrategies = () => {
         }
       );
 
-      if (response.data.Status === "Success") {
-        alert(`Strategy "${strategyName}" has been successfully removed from deployed strategies.`);
+      if (response.data.success) {
+        alert(`Strategy "${strategyName}" has been successfully stopped.`);
         // Refresh the data to get updated status
         await fetchDeployedStrategies();
       } else {
-        throw new Error(response.data.Message || "Failed to undeploy strategy");
+        throw new Error(response.data.message || "Failed to stop strategy");
       }
     } catch (err: any) {
       console.error("Error undeploying strategy:", err);

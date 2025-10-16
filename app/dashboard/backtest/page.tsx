@@ -96,7 +96,7 @@ export default function BacktestPage() {
         if (!token) throw new Error("Authentication token not found.");
 
         const response = await axios.get(
-          `${base_url}/user/backtest/${strategyId}`,
+          `${base_url}/backtest/results/${strategyId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -105,7 +105,17 @@ export default function BacktestPage() {
         );
         console.log("Backtest data response:", response.data.data);
 
-        setBacktestData(response.data.data);
+        // The API returns an array of backtest results, we want the most recent one
+        const backtestResults = response.data.data;
+        console.log("Backtest results array:", backtestResults);
+        
+        if (backtestResults && backtestResults.length > 0) {
+          const latestResult = backtestResults[0];
+          console.log("Setting backtest data to:", latestResult);
+          setBacktestData(latestResult); // Take the first (most recent) result
+        } else {
+          setError("No backtest results found for this strategy.");
+        }
       } catch (err: any) {
         setError(
           err.response?.data?.message ||
@@ -160,6 +170,13 @@ export default function BacktestPage() {
           <div className="text-center py-8">Loading backtest data...</div>
         )}
         {error && <div className="text-center py-8 text-red-500">{error}</div>}
+        
+        {/* Debug information */}
+        {!loading && !error && !backtestData && (
+          <div className="text-center py-8 text-yellow-600">
+            No backtest data available. Check console for details.
+          </div>
+        )}
 
         {!loading && !error && backtestData && (
           <>

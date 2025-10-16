@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Target, Play, Pause, TrendingDown, Rocket, Edit, MoreVertical } from "lucide-react";
+import { Target, Play, Pause, TrendingDown, Rocket, Edit, MoreVertical, Trash2 } from "lucide-react";
 import { useStrategiesList } from "@/hooks/useStrategyApi";
 import axios from "axios";
+// @ts-ignore
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useTerminal } from "@/hooks/useTerminal";
@@ -19,7 +20,7 @@ const StrategyList = () => {
   const router = useRouter();
   const { isTerminalOpen, currentStrategyId, openTerminal, closeTerminal } = useTerminal();
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || "http://103.189.173.82:4000/api";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || "http://localhost:4000/api";
 
   const handleBacktestClick = (strategyId: string) => {
     setOpenDropdownId((prev) => (prev === strategyId ? null : strategyId));
@@ -30,12 +31,69 @@ const StrategyList = () => {
   };
 
   const handleEditStrategy = (strategyId: string) => {
+    console.log('🔍 Edit strategy clicked for ID:', strategyId);
     router.push(`/dashboard/strategies?edit=${strategyId}`);
     setOpenActionMenuId(null);
   };
 
+  const handleDeleteStrategy = async (strategyId: string, strategyName: string, strategyStatus: string) => {
+    // Check if strategy is active
+    if (strategyStatus === 'active') {
+      alert('Cannot delete active strategy. Please stop the strategy first before deleting it.');
+      setOpenActionMenuId(null);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the strategy "${strategyName}"? This action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      const token = Cookies.get("token");
+
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
+
+      setLoadingId(strategyId);
+
+      const response = await axios.delete(`${API_BASE_URL}/strategies/${strategyId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        alert("Strategy deleted successfully!");
+        // Refresh the strategies list
+        window.location.reload();
+      } else {
+        throw new Error(response.data.message || "Failed to delete strategy");
+      }
+    } catch (err: any) {
+      console.error("❌ Delete strategy error:", err);
+      
+      let errorMessage = "Error deleting strategy: ";
+      if (err?.response?.status === 401) {
+        errorMessage += "Authentication failed. Please log in again.";
+      } else if (err?.response?.data?.message) {
+        errorMessage += err.response.data.message;
+      } else {
+        errorMessage += err.message;
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setLoadingId(null);
+      setOpenActionMenuId(null);
+    }
+  };
+
   const handleActionMenuClick = (strategyId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    console.log('🔍 Action menu clicked for strategy:', strategyId, 'Current open:', openActionMenuId);
     setOpenActionMenuId(openActionMenuId === strategyId ? null : strategyId);
   };
 
@@ -47,15 +105,14 @@ const StrategyList = () => {
         throw new Error("Authentication token not found");
       }
 
+      console.log("🔐 Token found:", token.substring(0, 20) + "...");
+      console.log("📊 Running backtest for strategy:", strategyId, "period:", period);
+
       setLoadingId(strategyId);
 
-      // Use enhanced backtest by default
-      const endpoint = useEnhanced 
-        ? `${API_BASE_URL}/user/backtest-enhanced/${strategyId}`
-        : `${API_BASE_URL}/user/backtest/${strategyId}`;
-
+      // Use the new backtest API
       const response = await axios.post(
-        endpoint,
+        `${API_BASE_URL}/backtest/${strategyId}`,
         { period },
         {
           headers: {
@@ -68,14 +125,27 @@ const StrategyList = () => {
       alert(`${backtestType} backtest completed for ${period}! Check results for detailed analysis.`);
       router.push(`/dashboard/backtest?strategyId=${strategyId}`);
     } catch (err: any) {
-      alert("Error running backtest: " + (err?.response?.data?.message || err.message));
+      console.error("❌ Backtest error:", err);
+      console.error("❌ Response data:", err?.response?.data);
+      console.error("❌ Status:", err?.response?.status);
+      
+      let errorMessage = "Error running backtest: ";
+      if (err?.response?.status === 401) {
+        errorMessage += "Authentication failed. Please log in again.";
+      } else if (err?.response?.data?.message) {
+        errorMessage += err.response.data.message;
+      } else {
+        errorMessage += err.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoadingId(null);
       setOpenDropdownId(null);
     }
   };
 
-  const deployStrategy = async (strategy: any, actionType: "Start" | "Stop") => {
+  const deployStrategy = async (strategy: any, actionType: "Start" | "Stop" | "Pause" | "Resume") => {
     try {
       const token = Cookies.get("token");
 
@@ -85,17 +155,10 @@ const StrategyList = () => {
 
       setDeployLoadingId(strategy._id);
 
-      const requestBody = {
-        ActionType: actionType,
-        BrokerClientId: strategy.brokerClientId || "default", // You might need to get this from strategy or user context
-        BrokerId: strategy.brokerId || "default", // You might need to get this from strategy or user context
-        StrategyId: strategy.strategyId || strategy._id,
-        isLiveMode: strategy.mode === "live"
-      };
-
+      // Use the new strategy toggle API
       const response = await axios.post(
-        `${API_BASE_URL}/trading-engine/deploy-strategy`,
-        requestBody,
+        `${API_BASE_URL}/strategies/${strategy._id}/toggle`,
+        { action: actionType.toLowerCase() },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -103,17 +166,49 @@ const StrategyList = () => {
         }
       );
 
-      if (response.data.Status === "Success") {
+      if (response.data.success) {
         alert(`Strategy ${actionType.toLowerCase()}ed successfully!`);
         // Optionally refresh the strategies list
         window.location.reload();
       } else {
-        throw new Error(response.data.Message || "Failed to deploy strategy");
+        throw new Error(response.data.message || "Failed to deploy strategy");
       }
     } catch (err: any) {
       alert("Error deploying strategy: " + (err?.response?.data?.Message || err.message));
     } finally {
       setDeployLoadingId(null);
+    }
+  };
+
+  // Helper function to determine the appropriate action based on strategy status
+  const getDeployAction = (strategy: any) => {
+    switch (strategy.status) {
+      case 'draft':
+      case 'backtested':
+      case 'stopped':
+        return 'Start';
+      case 'active':
+        return 'Stop';
+      case 'paused':
+        return 'Resume';
+      default:
+        return 'Start';
+    }
+  };
+
+  // Helper function to get the appropriate button text
+  const getDeployButtonText = (strategy: any) => {
+    switch (strategy.status) {
+      case 'draft':
+      case 'backtested':
+      case 'stopped':
+        return 'Deploy';
+      case 'active':
+        return 'Stop';
+      case 'paused':
+        return 'Resume';
+      default:
+        return 'Deploy';
     }
   };
 
@@ -131,7 +226,7 @@ const StrategyList = () => {
       </div>
 
       <div className="space-y-4">
-        {strategies.map((strategy) => {
+        {strategies && strategies.length > 0 && strategies.map((strategy) => {
           const isBacktested = strategy.status === "backtested";
           const isActive = strategy.status === "active";
           const isPaused = strategy.status === "paused";
@@ -143,9 +238,9 @@ const StrategyList = () => {
                   <Target className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">{strategy.strategyName}</h3>
+                  <h3 className="text-lg font-semibold">{strategy.name}</h3>
                   <p className="text-sm text-gray-600">
-                    {strategy.strategyType} • {strategy.instruments.join(", ")}
+                    {strategy.type}
                   </p>
                 </div>
               </div>
@@ -192,6 +287,22 @@ const StrategyList = () => {
                           <Edit className="w-3 h-3" />
                           Edit Strategy
                         </button>
+                        <button
+                          className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${
+                            strategy.status === 'active' 
+                              ? 'text-gray-400 cursor-not-allowed' 
+                              : 'hover:bg-red-50 text-red-600'
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteStrategy(strategy._id, strategy.name, strategy.status);
+                          }}
+                          disabled={loadingId === strategy._id || strategy.status === 'active'}
+                          title={strategy.status === 'active' ? 'Cannot delete active strategy. Stop it first.' : 'Delete strategy'}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          {loadingId === strategy._id ? "Deleting..." : "Delete Strategy"}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -210,7 +321,7 @@ const StrategyList = () => {
                       {openDropdownId === strategy._id && (
                         <div className="absolute right-0 mt-2 bg-white border border-gray-300 rounded shadow-md z-50 w-48">
                           <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b">
-                            Enhanced Backtest
+                            Select Time Period
                           </div>
                           {["1m", "3m", "6m"].map((period) => (
                             <button
@@ -219,10 +330,10 @@ const StrategyList = () => {
                               onClick={() => runBacktest(strategy._id, period, true)}
                             >
                               <span>{period}</span>
-                              <span className="text-xs text-green-600">✓</span>
+                              {/* <span className="text-xs text-green-600">✓</span> */}
                             </button>
                           ))}
-                          <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-t border-b">
+                          {/* <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-t border-b">
                             Standard Backtest
                           </div>
                           {["1m", "3m", "6m"].map((period) => (
@@ -233,56 +344,44 @@ const StrategyList = () => {
                             >
                               {period}
                             </button>
-                          ))}
+                          ))} */}
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* Show Deploy button only if backtested */}
-                  {isBacktested && (
-                    <div className="flex gap-1">
-                      {!isActive && (
-                        <button
-                          className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors flex items-center gap-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deployStrategy(strategy, "Start");
-                          }}
-                          disabled={deployLoadingId === strategy._id}
-                        >
-                          {deployLoadingId === strategy._id ? (
-                            "Starting..."
-                          ) : (
-                            <>
-                              <Rocket className="w-3 h-3" />
-                              Deploy
-                            </>
-                          )}
-                        </button>
-                      )}
-                      
-                      {isActive && (
+                  {/* Show Deploy button for all strategies */}
+                  <div className="flex gap-1">
+                    <button
+                      className={`text-xs px-3 py-1 rounded transition-colors flex items-center gap-1 ${
+                        strategy.status === 'active' 
+                          ? 'bg-red-600 text-white hover:bg-red-700' 
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deployStrategy(strategy, getDeployAction(strategy) as any);
+                      }}
+                      disabled={deployLoadingId === strategy._id}
+                    >
+                      {deployLoadingId === strategy._id ? (
+                        "Processing..."
+                      ) : (
                         <>
-                          <TerminalButton 
-                            strategyId={strategy.strategyId || strategy._id}
-                            onOpenTerminal={openTerminal}
-                            disabled={false}
-                          />
-                          <button
-                            className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deployStrategy(strategy, "Stop");
-                            }}
-                            disabled={deployLoadingId === strategy._id}
-                          >
-                            {deployLoadingId === strategy._id ? "Stopping..." : "Stop"}
-                          </button>
+                          <Rocket className="w-3 h-3" />
+                          {getDeployButtonText(strategy)}
                         </>
                       )}
+                    </button>
+                      
+                      {isActive && (
+                        <TerminalButton 
+                          strategyId={strategy.strategyId || strategy._id}
+                          onOpenTerminal={openTerminal}
+                          disabled={false}
+                        />
+                      )}
                     </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -293,46 +392,43 @@ const StrategyList = () => {
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600">Order Type</p>
-                  <p className="font-semibold">{strategy.orderType}</p>
+                  <p className="font-semibold">{strategy.order_type || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Trading Hours</p>
                   <p className="font-semibold">
-                    {strategy.startTime} - {strategy.squareOffTime}
+                    {strategy.start_time || 'N/A'} - {strategy.square_off_time || 'N/A'}
                   </p>
                 </div>
               </div>
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600">Max Profit</p>
-                  <p className="font-semibold">₹{strategy.riskManagement.exitWhenProfit}</p>
+                  <p className="font-semibold">₹{strategy.risk_management?.exit_when_overall_profit_amount || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Max Loss</p>
-                  <p className="font-semibold">₹{strategy.riskManagement.exitWhenLoss}</p>
+                  <p className="font-semibold">₹{strategy.risk_management?.exit_when_overall_loss_amount || 'N/A'}</p>
                 </div>
               </div>
-              <div className="space-y-3">
+              {/* <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600">Profit Trailing</p>
-                  <p className="font-semibold">{strategy.profitTrailing}</p>
+                  <p className="font-semibold">{strategy.profit_trailing || 'N/A'}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Mode</p>
-                  <p className="font-semibold capitalize">{strategy.mode}</p>
-                </div>
-              </div>
+                
+              </div> */}
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600">Created</p>
                   <p className="text-sm text-gray-500">
-                    {new Date(strategy.createdAt).toLocaleDateString()}
+                    {new Date(strategy.created_at || strategy.createdAt).toLocaleDateString()}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Version</p>
-                  <p className="text-sm text-gray-500">{strategy.__v}</p>
-                </div>
+                {/* <div>
+                  <p className="text-sm text-gray-600">Status</p>
+                  <p className="text-sm text-gray-500 capitalize">{strategy.status || 'draft'}</p>
+                </div> */}
               </div>
             </div>
           );
@@ -353,6 +449,16 @@ const StrategyList = () => {
             </div>
           );
         })}
+        
+        {(!strategies || strategies.length === 0) && (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Target className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">No Strategies Found</h3>
+            <p className="text-gray-500">You haven't created any strategies yet. Start by creating your first strategy!</p>
+          </div>
+        )}
       </div>
 
       {/* Terminal Modal */}

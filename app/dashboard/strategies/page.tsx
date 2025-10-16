@@ -2,26 +2,25 @@
 
 import React, { useState, useEffect } from "react";
 import { Plus, Target, Play, Pause, TrendingDown, FileText, Clock, ArrowLeft } from "lucide-react";
-import { useStrategies } from "@/context/StrategyContext";
-import StrategyForm from "@/components/StrategyForm";
+import NewStrategyForm from "@/components/NewStrategyForm";
 import StrategyList from "@/components/StrategyList";
 import DeployedStrategies from "@/components/DeployedStrategies";
 import { useSearchParams } from "next/navigation";
+import axios from "axios";
+// @ts-ignore
+import Cookies from "js-cookie";
 
 
 export default function AlgoroomStrategyPage() {
   const [activeTab, setActiveTab] = useState("Create Strategy");
-  const { strategies, loading, fetchStrategies, createStrategy } = useStrategies();
   const searchParams = useSearchParams();
   const editStrategyId = searchParams.get('edit');
+  
+  console.log('🔍 Page component - searchParams:', searchParams.toString());
+  console.log('🔍 Page component - editStrategyId:', editStrategyId);
 
   useEffect(() => {
-    if (activeTab === "My Strategies") {
-      fetchStrategies({ mode: "backtest" });
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
+    console.log('🔍 Edit strategy ID detected:', editStrategyId);
     if (editStrategyId) {
       setActiveTab("Create Strategy");
     }
@@ -29,10 +28,40 @@ export default function AlgoroomStrategyPage() {
 
   const handleCreateStrategy = async (strategyData) => {
     try {
-      await createStrategy(strategyData);
-      setActiveTab("My Strategies");
+      // Use the new backend API
+      const token = Cookies.get("token");
+      const base_url = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || 'http://localhost:4000/api';
+      
+      let response;
+      
+      if (editStrategyId) {
+        // Update existing strategy
+        response = await axios.put(`${base_url}/strategies/${editStrategyId}`, strategyData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else {
+        // Create new strategy
+        response = await axios.post(`${base_url}/strategies`, strategyData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      
+      if (response.data.success) {
+        const action = editStrategyId ? "updated" : "created";
+        alert(`Strategy ${action} successfully!`);
+        setActiveTab("My Strategies");
+        // Clear edit mode and refresh strategies list
+        if (editStrategyId) {
+          window.history.replaceState({}, '', '/dashboard/strategies');
+        }
+        window.location.reload();
+      } else {
+        throw new Error(response.data.message || `Failed to ${editStrategyId ? 'update' : 'create'} strategy`);
+      }
     } catch (error) {
-      console.error("Failed to create strategy:", error);
+      console.error(`Failed to ${editStrategyId ? 'update' : 'create'} strategy:`, error);
+      const action = editStrategyId ? 'update' : 'create';
+      alert(`Failed to ${action} strategy: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -90,16 +119,20 @@ export default function AlgoroomStrategyPage() {
                   <p className="text-gray-600">Modify your strategy configuration</p>
                 </div>
               )}
-              <StrategyForm 
+              <NewStrategyForm 
                 onSubmit={handleCreateStrategy} 
                 strategyId={editStrategyId || undefined}
                 isEditMode={!!editStrategyId}
               />
+              {console.log('🔍 Passing props to NewStrategyForm:', {
+                strategyId: editStrategyId || undefined,
+                isEditMode: !!editStrategyId
+              })}
             </div>
           )}
 
           {activeTab === "My Strategies" && (
-            <StrategyList strategies={strategies} loading={loading} />
+            <StrategyList />
           )}
 
           {activeTab === "Deployed Strategies" && (

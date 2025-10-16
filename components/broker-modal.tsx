@@ -6,26 +6,91 @@ import axios from "axios";
 // @ts-ignore
 import Cookies from "js-cookie";
 
+interface Broker {
+  id: string;
+  name: string;
+  description: string;
+  logo: string;
+  features: string[];
+  isAvailable: boolean;
+  authUrl: string;
+}
+
 const BrokerModal = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedBroker, setSelectedBroker] = useState(null);
+  const [selectedBroker, setSelectedBroker] = useState<Broker | null>(null);
   const [formData, setFormData] = useState({});
-  const [brokers, setBrokers] = useState([]);
+  const [brokers, setBrokers] = useState<Broker[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const token = Cookies.get("token");
-  const base_url = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL;
+  const base_url = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || 'http://localhost:4000/api';
+
+  // Debug: Log brokers state changes
+  console.log("BrokerModal - Current brokers state:", brokers);
+
+  // Initialize with fallback brokers
+  useEffect(() => {
+    if (brokers.length === 0) {
+      const fallbackBrokers = [
+        {
+          id: 'angel',
+          name: 'Angel One',
+          description: 'Angel One SmartAPI for trading',
+          logo: '/images/brokers/angel-one.png',
+          features: ['Equity', 'F&O', 'Currency', 'Commodity'],
+          isAvailable: true,
+          authUrl: '/api/brokers/angel/connect'
+        },
+        {
+          id: 'dhan',
+          name: 'Dhan',
+          description: 'Dhan API for trading',
+          logo: '/images/brokers/dhan.png',
+          features: ['Equity', 'F&O', 'Currency'],
+          isAvailable: true,
+          authUrl: '/api/brokers/dhan/connect'
+        }
+      ];
+      setBrokers(fallbackBrokers);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchBrokers = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(`${base_url}/user/brokers`, {
+        const response = await axios.get(`${base_url}/brokers/available`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setBrokers(response.data);
+        console.log("Broker modal - Available brokers API response:", response.data);
+        setBrokers(response.data.data || []);
       } catch (err) {
-        setError(err.message);
+        console.error("Broker modal - Error fetching available brokers:", err);
+        // Fallback to hardcoded brokers if API fails
+        const fallbackBrokers = [
+          {
+            id: 'angel',
+            name: 'Angel One',
+            description: 'Angel One SmartAPI for trading',
+            logo: '/images/brokers/angel-one.png',
+            features: ['Equity', 'F&O', 'Currency', 'Commodity'],
+            isAvailable: true,
+            authUrl: '/api/brokers/angel/connect'
+          },
+          {
+            id: 'dhan',
+            name: 'Dhan',
+            description: 'Dhan API for trading',
+            logo: '/images/brokers/dhan.png',
+            features: ['Equity', 'F&O', 'Currency'],
+            isAvailable: true,
+            authUrl: '/api/brokers/dhan/connect'
+          }
+        ];
+        console.log("Broker modal - Using fallback brokers:", fallbackBrokers);
+        setBrokers(fallbackBrokers);
+        setError(null);
       } finally {
         setIsLoading(false);
       }
@@ -34,14 +99,14 @@ const BrokerModal = () => {
     if (isOpen) fetchBrokers();
   }, [isOpen]);
 
-  const handleInputChange = (fieldName, value) => {
+  const handleInputChange = (fieldName: string, value: any) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
-  const handleFileChange = async (fieldName, file) => {
+  const handleFileChange = async (fieldName: string, file: any) => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("brokerId", selectedBroker._id);
+    formData.append("brokerId", selectedBroker?.id || "");
     formData.append("fieldId", fieldName);
 
     try {
@@ -60,12 +125,12 @@ const BrokerModal = () => {
     }
   };
 
-  const handleBrokerSelect = (broker) => {
+  const handleBrokerSelect = (broker: Broker) => {
     setSelectedBroker(broker);
     setFormData({});
   };
 
-  function extractTokens(callbackUrl: string) {
+  function extractTokens(callbackUrl: string): any {
   try {
     const url = new URL(callbackUrl);
     const params = url.searchParams;
@@ -91,97 +156,36 @@ const BrokerModal = () => {
     try {
       setIsLoading(true);
 
-      if (selectedBroker?.name === "AngelOne") {
-        // 1) Add listener BEFORE opening the popup
-        let popup: Window | null = null;
-        let handled = false;
-      
-        function cleanup() {
-          window.removeEventListener("message", messageHandler);
-          if (popup && !popup.closed) popup.close();
-        }
-      
-        async function messageHandler(event: MessageEvent) {
-          // 2) Security: only accept from your backend that rendered /angelone/callback
-          const expected = process.env.NEXT_PUBLIC_BACKEND_ORIGIN; // e.g. "https://x7klbpj3-4000.inc1.devtunnels.ms"
-          if (event.origin !== expected) return;
-      
-          if (handled) return; // guard against duplicates
-          handled = true;
-      
-          try {
-            if (event.data?.type === "ANGELONE_AUTH_SUCCESS") {
-              const { auth_token, refresh_token, feed_token, user_id } = event.data;
-      
-              // Only save credentials if they weren't already saved by the backend
-              if (!user_id) {
-                await axios.post(
-                  `${base_url}/user/save-credentials`,
-                  { auth_token, refresh_token, feed_token },
-                  { headers: { Authorization: `Bearer ${token}` } }
-                );
-              }
-      
-              console.log("AngelOne linked successfully");
-              alert("Angel One connected successfully!");
-              setIsOpen(false);
-              // router.replace("/dashboard/trading"); // navigate now if you want
-            } else if (event.data?.type === "ANGELONE_AUTH_ERROR") {
-              console.error("AngelOne linking failed:", event.data.error);
-              alert("Failed to connect Angel One: " + event.data.error);
-            }
-          } catch (err) {
-            console.error("Saving tokens failed", err);
-            alert("Failed to save Angel One credentials. Please try again.");
-          } finally {
-            cleanup();
-          }
-        }
-      
-        window.addEventListener("message", messageHandler);
-      
-        // 3) Open popup AFTER listener is ready
-        const { data } = await axios.get(`${base_url}/user/connect-angelone`, {
+      // Get the broker connection URL from backend
+        const { data } = await axios.get(`${base_url}/brokers/${selectedBroker?.id}/connect`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        popup = window.open(data.url, "angelone_auth", "width=600,height=800");
       
-        // 4) Optional: safety timeout/cleanup if user closes popup without completing
-        setTimeout(() => {
-          if (!handled) cleanup();
-        }, 3 * 60 * 1000); // 3 minutes
-      
-        return;
-      }      
-      
-      
+      if (data.data?.loginUrl) {
+        // Open in new window for OAuth flow
+        const popup = window.open(data.data.loginUrl, `${selectedBroker?.id}_auth`, 'width=600,height=800');
+        
+        // Listen for popup completion
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            alert(`${selectedBroker?.name} connection completed!`);
+            setIsOpen(false);
+            setSelectedBroker(null);
+            setFormData({});
+          }
+        }, 1000);
+      } else {
+        // Direct connection (like Dhan sandbox)
+        alert(`${selectedBroker?.name} connected successfully!`);
+        setIsOpen(false);
+        setSelectedBroker(null);
+        setFormData({});
+      }
 
-      const formPayload = new FormData();
-      formPayload.append("brokerId", selectedBroker._id);
-      Object.entries(formData).forEach(([fieldId, value]) => {
-        if (value instanceof File) {
-          formPayload.append("file", value);
-          formPayload.append("fieldId", fieldId);
-        } else {
-          formPayload.append("fieldId", fieldId);
-          formPayload.append("value", value);
-        }
-      });
-
-      await axios.post(`${base_url}/user/submissions`, formPayload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      alert("Broker submitted successfully!");
-      setIsOpen(false);
-      setSelectedBroker(null);
-      setFormData({});
     } catch (err) {
-      console.error("Error submitting broker:", err);
-      alert("Failed to submit broker. Please try again.");
+      console.error("Error connecting to broker:", err);
+      alert(`Failed to connect to ${selectedBroker?.name}. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -192,8 +196,8 @@ const BrokerModal = () => {
     setFormData({});
   };
 
-  const getBrokerLogo = (brokerName) => {
-    const logos = {
+  const getBrokerLogo = (brokerName: string) => {
+    const logos: Record<string, string> = {
       "Home Insurance": "🏠",
       "Up Stock": "📈",
       Upstock: "🔺",
@@ -203,8 +207,8 @@ const BrokerModal = () => {
     return logos[brokerName] || "📊";
   };
 
-  const getBrokerColor = (brokerName) => {
-    const colors = {
+  const getBrokerColor = (brokerName: string) => {
+    const colors: Record<string, string> = {
       "Home Insurance": "bg-green-500",
       "Up Stock": "bg-purple-500",
       Upstock: "bg-blue-500",
@@ -260,8 +264,6 @@ const BrokerModal = () => {
                   <div className="flex justify-center items-center h-full">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : error ? (
-                  <div className="text-red-500 text-center p-4">{error}</div>
                 ) : (
                   <>
                     <input
@@ -269,44 +271,39 @@ const BrokerModal = () => {
                       placeholder="Search Brokers"
                       className="w-full mb-6 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <h3 className="text-sm font-medium text-gray-500 mb-4">Available Brokers</h3>
+                    <h3 className="text-sm font-medium text-gray-500 mb-4">
+                      Available Brokers ({brokers.length})
+                    </h3>
+                    {error && (
+                      <div className="text-yellow-600 text-sm mb-4 p-2 bg-yellow-50 rounded">
+                        API Error: {error}. Showing fallback brokers.
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
-                      {/* AngelOne active */}
-                      <button
-                        onClick={() =>
-                          handleBrokerSelect({
-                            _id: "angel-one",
-                            name: "AngelOne",
-                            fields: [],
-                          })
-                        }
-                        className={`flex flex-col items-center p-4 border rounded-lg transition-all 
-                          ${
-                            selectedBroker?.name === "AngelOne"
-                              ? "border-blue-500 bg-blue-50 shadow-md"
-                              : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
-                          }`}
-                      >
-                        <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white text-lg mb-2">
-                          🅰️
+                      {brokers.length === 0 ? (
+                        <div className="col-span-2 text-center py-8 text-gray-500">
+                          No brokers available
                         </div>
-                        <span className="text-sm font-medium text-gray-700">AngelOne</span>
-                      </button>
-
-                      {/* Other Brokers (Disabled visually) */}
-                      {brokers.map((broker) => (
-                        <div
-                          key={broker._id}
-                          className="flex flex-col items-center p-4 border rounded-lg bg-gray-100 opacity-50 cursor-not-allowed"
+                      ) : (
+                        brokers.map((broker) => (
+                        <button
+                          key={broker.id}
+                          onClick={() => handleBrokerSelect(broker)}
+                          className={`flex flex-col items-center p-4 border rounded-lg transition-all 
+                            ${
+                              selectedBroker?.id === broker.id
+                                ? "border-blue-500 bg-blue-50 shadow-md"
+                                : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
+                            }`}
                         >
-                          <div
-                            className={`w-12 h-12 rounded-full ${getBrokerColor(broker.name)} flex items-center justify-center text-white text-lg mb-2`}
-                          >
-                            {getBrokerLogo(broker.name)}
+                          <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white text-lg mb-2">
+                            {broker.id === 'angel' ? '🅰️' : broker.id === 'dhan' ? '🏦' : '📊'}
                           </div>
-                          <span className="text-sm font-medium text-gray-500">{broker.name}</span>
-                        </div>
-                      ))}
+                          <span className="text-sm font-medium text-gray-700">{broker.name}</span>
+                          <span className="text-xs text-gray-500 mt-1">{broker.description}</span>
+                        </button>
+                        ))
+                      )}
                     </div>
                   </>
                 )}
@@ -336,40 +333,29 @@ const BrokerModal = () => {
                       </div>
                     </div>
 
-                    {selectedBroker.fields.length > 0 ? (
-                      <div className="space-y-4">
-                        {selectedBroker.fields.map((field) => (
-                          <div key={field._id}>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              {field.label} {field.required && <span className="text-red-500">*</span>}
-                            </label>
-                            {field.type === "file" ? (
-                              <div>
-                                <input
-                                  type="file"
-                                  onChange={(e) => handleFileChange(field.name, e.target.files[0])}
-                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                {formData[field.name] && (
-                                  <p className="text-sm text-green-600 mt-1">File uploaded successfully</p>
-                                )}
-                              </div>
-                            ) : (
-                              <input
-                                type={field.type}
-                                placeholder={field.placeholder}
-                                value={formData[field.name] || ""}
-                                onChange={(e) => handleInputChange(field.name, e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required={field.required}
-                              />
-                            )}
-                          </div>
-                        ))}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-2">Description:</p>
+                        <p className="text-gray-800">{selectedBroker.description}</p>
                       </div>
-                    ) : (
-                      <p className="text-gray-500 mb-6">You will be redirected to connect your AngelOne account.</p>
-                    )}
+                      
+                      <div>
+                        <p className="text-sm text-gray-600 mb-2">Features:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedBroker.features?.map((feature, index) => (
+                            <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                              {feature}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="text-sm text-blue-800">
+                          You will be redirected to connect your {selectedBroker.name} account.
+                        </p>
+                      </div>
+                    </div>
 
                     <button
                       onClick={handleSubmit}
@@ -377,10 +363,8 @@ const BrokerModal = () => {
                       className={`w-full mt-6 ${isLoading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"} text-white py-3 rounded-lg font-medium`}
                     >
                       {isLoading
-                        ? selectedBroker.name === "AngelOne"
-                          ? "Redirecting..."
-                          : "Submitting..."
-                        : "Submit"}
+                        ? "Connecting..."
+                        : `Connect ${selectedBroker.name}`}
                     </button>
                   </div>
                 )}

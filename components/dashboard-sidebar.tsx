@@ -18,6 +18,7 @@ import {
   Youtube,
   BarChart
 } from "lucide-react"
+import TradingViewWidget from "./TradingViewWidget"
 import Link from "next/link"
 import React, { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -100,6 +101,8 @@ const DashboardSidebar = () => {
           )}
         </div>
       </div>
+          {/* <TradingViewWidget /> */}
+
       <div className="space-y-2">
         {indices.map((index) => (
           <div 

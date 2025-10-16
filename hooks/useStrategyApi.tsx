@@ -5,7 +5,7 @@ import Cookies from 'js-cookie';
 import { getErrorMessage } from '../utils/errorMessages';
 
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || 'http://103.189.173.82:4000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || 'http://localhost:4000/api';
 
 type StrategyPayload = {
   strategyName: string;
@@ -51,7 +51,7 @@ export const useStrategyApi = () => {
 
       console.log('Sending strategy payload:', payload);
 
-      const response = await axios.post(`${API_BASE_URL}/user/strategies`, payload, {
+      const response = await axios.post(`${API_BASE_URL}/strategies`, payload, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -83,7 +83,7 @@ export const useStrategyApi = () => {
 
       console.log('Updating strategy payload:', payload);
 
-      const response = await axios.put(`${API_BASE_URL}/user/strategies/${strategyId}`, payload, {
+      const response = await axios.put(`${API_BASE_URL}/strategies/${strategyId}`, payload, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -131,25 +131,34 @@ export const useStrategiesList = () => {
     
     try {
       const token = Cookies.get('token');
+      console.log('🔍 Fetching strategies with token:', token ? 'Present' : 'Missing');
+      
       if (!token) {
         throw new Error('Authentication token not found');
       }
 
-      const response = await axios.get(`${API_BASE_URL}/user/my-strategies`, {
+      console.log('📡 Making request to:', `${API_BASE_URL}/strategies`);
+      const response = await axios.get(`${API_BASE_URL}/strategies`, {
         params: { page, limit },
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      setStrategies(response.data.data);
+      console.log('📊 Strategy API Response:', response.data);
+      console.log('📊 Strategies data:', response.data.data?.strategies);
+      console.log('📊 Pagination data:', response.data.data?.pagination);
+
+      setStrategies(response.data.data.strategies || []);
       setPagination({
-        page: response.data.meta.page,
-        limit: response.data.meta.limit,
-        total: response.data.meta.total,
-        pages: response.data.meta.pages
+        page: response.data.data.pagination?.current || 1,
+        limit: response.data.data.pagination?.limit || 10,
+        total: response.data.data.pagination?.total || 0,
+        pages: response.data.data.pagination?.pages || 1
       });
     } catch (err: any) {
+      console.error('❌ Error fetching strategies:', err);
+      console.error('❌ Error response:', err.response?.data);
       setError(getErrorMessage(err));
     } finally {
       setLoading(false);
