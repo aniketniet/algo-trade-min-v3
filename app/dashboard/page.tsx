@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowUp,
+  ArrowDown,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Activity,
+  DollarSign,
+  Target,
+  AlertCircle
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -17,15 +26,37 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { DashboardChart } from "@/components/dashboard-chart";
 import { DashboardPieChart } from "@/components/dashboard-pie-chart";
 import TradingViewMarketOverview from "@/components/TradingViewMarketOverview";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { useRiskDisclaimer } from "@/hooks/useRiskDisclaimer";
 
 export default function DashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showRiskModal, setShowRiskModal] = useState(true);
   const [accepted, setAccepted] = useState(false);
+  
+  // Use dynamic dashboard data
+  const { 
+    stats, 
+    strategies, 
+    activities, 
+    brokers, 
+    loading, 
+    error, 
+    refreshData 
+  } = useDashboardData();
+
+  // Use risk disclaimer hook
+  const { 
+    showModal: showRiskModal, 
+    loading: riskDisclaimerLoading, 
+    error: riskDisclaimerError, 
+    acceptRiskDisclaimer 
+  } = useRiskDisclaimer();
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -104,9 +135,11 @@ export default function DashboardPage() {
               </div>
               <Button
                 disabled={!accepted}
-                onClick={() => {
-                  localStorage.setItem("risk_disclaimer_accepted", "true");
-                  setShowRiskModal(false);
+                onClick={async () => {
+                  const success = await acceptRiskDisclaimer();
+                  if (success) {
+                    setAccepted(false); // Reset checkbox
+                  }
                 }}
                 className="bg-gray-800 text-white px-6 py-2 rounded-md text-sm disabled:bg-gray-200 disabled:text-gray-400"
               >
@@ -122,6 +155,16 @@ export default function DashboardPage() {
           <div className="mb-6 flex items-center justify-between">
             <h1 className="text-2xl font-bold md:text-3xl">Dashboard Overview</h1>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshData}
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               <Badge
                 variant="outline"
                 className="border-green-200 text-green-700"
@@ -129,60 +172,151 @@ export default function DashboardPage() {
                 Live Trading
               </Badge>
               <Badge variant="outline" className="border-blue-200 text-blue-700">
-                3 Active Strategies
+                {loading ? (
+                  <Skeleton className="h-4 w-20" />
+                ) : (
+                  `${stats?.activeStrategies || 0} Active Strategies`
+                )}
               </Badge>
             </div>
           </div>
 
-          {/* KPI Cards */}
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+          {/* Error Display */}
+          {error && (
+            <Alert className="mb-6 border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
 
-            <Card className="border-gray-200 w-full  text-white bg-[rgb(12,_11,_58)]">
+          {/* KPI Cards */}
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+            <Card className="border-gray-200 w-full text-white bg-[rgb(12,_11,_58)]">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-white">
-                  Add new Broker
+                <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Brokers
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col items-center">
-                  <Link href="/dashboard/brokers" className="w-full">
-                    <Button
-                      asChild
-                      className="w-full bg-white text-blue-900 hover:bg-white rounded-full"
-
-                    >
-                      <div className="ml-2 flex items-center text-sm text-green-600">
-                        <ArrowUp className="mr-1 h-4 w-4" />
-                        No brokers added
-                      </div>
-                    </Button>
-                  </Link>
-
-                  <p className="text-xs text-gray-500 mt-1">Click to add a broker</p>
+                  {loading ? (
+                    <Skeleton className="h-8 w-full bg-gray-700" />
+                  ) : (
+                    <Link href="/dashboard/brokers" className="w-full">
+                      <Button
+                        asChild
+                        className="w-full bg-white text-blue-900 hover:bg-white rounded-full"
+                      >
+                        <div className="flex items-center justify-center text-sm">
+                          {(stats?.totalBrokers || 0) > 0 ? (
+                            <>
+                              <ArrowUp className="mr-1 h-4 w-4 text-green-600" />
+                              {stats?.totalBrokers} broker{(stats?.totalBrokers || 0) > 1 ? 's' : ''} connected
+                            </>
+                          ) : (
+                            <>
+                              <ArrowUp className="mr-1 h-4 w-4 text-green-600" />
+                              No brokers added
+                            </>
+                          )}
+                        </div>
+                      </Button>
+                    </Link>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(stats?.totalBrokers || 0) > 0 ? 'Manage your brokers' : 'Click to add a broker'}
+                  </p>
                 </div>
-
               </CardContent>
             </Card>
-            <Card className="border-gray-200 w-full  text-white bg-[rgb(12,_11,_58)]">
+            <Card className="border-gray-200 w-full text-white bg-[rgb(12,_11,_58)]">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-white">
+                <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
                   Total Trades
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center">
-                  <div className="text-2xl font-bold ">1,234</div>
-                  <div className="ml-2 flex items-center text-sm text-green-600">
-                    <ArrowUp className="mr-1 h-4 w-4" />
-                    5.6%
-                  </div>
+                  {loading ? (
+                    <Skeleton className="h-8 w-20 bg-gray-700" />
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold">
+                        {stats?.totalTrades?.toLocaleString() || '0'}
+                      </div>
+                      <div className="ml-2 flex items-center text-sm text-green-600">
+                        <ArrowUp className="mr-1 h-4 w-4" />
+                        {stats?.winRate?.toFixed(1) || '0'}%
+                      </div>
+                    </>
+                  )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Last 30 days</p>
+                <p className="text-xs text-gray-500 mt-1">Win Rate</p>
               </CardContent>
             </Card>
 
+            <Card className="border-gray-200 w-full text-white bg-[rgb(12,_11,_58)]">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Portfolio Value
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center">
+                  {loading ? (
+                    <Skeleton className="h-8 w-24 bg-gray-700" />
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold">
+                        ₹{stats?.portfolioValue?.toLocaleString() || '0'}
+                      </div>
+                      <div className="ml-2 flex items-center text-sm text-green-600">
+                        <TrendingUp className="mr-1 h-4 w-4" />
+                        +2.1%
+                      </div>
+                    </>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Total Value</p>
+              </CardContent>
+            </Card>
 
-
+            <Card className="border-gray-200 w-full text-white bg-[rgb(12,_11,_58)]">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Today's P&L
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center">
+                  {loading ? (
+                    <Skeleton className="h-8 w-20 bg-gray-700" />
+                  ) : (
+                    <>
+                      <div className={`text-2xl font-bold ${(stats?.todayPnL || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        ₹{stats?.todayPnL?.toFixed(2) || '0.00'}
+                      </div>
+                      <div className={`ml-2 flex items-center text-sm ${(stats?.todayPnL || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {(stats?.todayPnL || 0) >= 0 ? (
+                          <ArrowUp className="mr-1 h-4 w-4" />
+                        ) : (
+                          <ArrowDown className="mr-1 h-4 w-4" />
+                        )}
+                        {Math.abs(stats?.todayPnL || 0) > 0 ? 'Live' : '0%'}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Today's Performance</p>
+              </CardContent>
+            </Card>
 
 
 
@@ -288,68 +422,79 @@ export default function DashboardPage() {
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="border-gray-200 bg-white text-gray-800">
               <CardHeader>
-                <CardTitle>Active Strategies</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  Active Strategies
+                  <Link href="/dashboard/strategies">
+                    <Button variant="outline" size="sm">
+                      View All
+                    </Button>
+                  </Link>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                    <div>
-                      <h4 className="font-medium">Momentum Scalper</h4>
-                      <p className="text-sm text-gray-600">
-                        NASDAQ • 1m timeframe
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-green-600">
-                        +$432.50
+                {loading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-32 mb-2" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                        <div className="text-right">
+                          <Skeleton className="h-4 w-16 mb-2" />
+                          <Skeleton className="h-5 w-16" />
+                        </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="border-green-200 text-green-700 text-xs"
-                      >
-                        Running
-                      </Badge>
-                    </div>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                    <div>
-                      <h4 className="font-medium">Mean Reversion</h4>
-                      <p className="text-sm text-gray-600">
-                        S&P 500 • 5m timeframe
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-green-600">
-                        +$287.30
+                ) : strategies.length > 0 ? (
+                  <div className="space-y-4">
+                    {strategies.map((strategy) => (
+                      <div key={strategy._id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <div>
+                          <h4 className="font-medium">{strategy.name}</h4>
+                          <p className="text-sm text-gray-600">
+                            {strategy.instruments?.[0]?.symbol || 'NIFTY'} • {strategy.type === 'time_based' ? 'Time Based' : 'Indicator Based'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-sm font-medium ${
+                            strategy.status === 'active' ? 'text-green-600' : 
+                            strategy.status === 'paused' ? 'text-yellow-600' : 
+                            'text-gray-600'
+                          }`}>
+                            {strategy.status === 'active' ? '+₹432.50' : 
+                             strategy.status === 'paused' ? '-₹45.20' : 
+                             '₹0.00'}
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${
+                              strategy.status === 'active' ? 'border-green-200 text-green-700' :
+                              strategy.status === 'paused' ? 'border-yellow-200 text-yellow-700' :
+                              'border-gray-200 text-gray-700'
+                            }`}
+                          >
+                            {strategy.status === 'active' ? 'Running' :
+                             strategy.status === 'paused' ? 'Paused' :
+                             strategy.status === 'completed' ? 'Completed' :
+                             strategy.status === 'backtested' ? 'Backtested' :
+                             'Draft'}
+                          </Badge>
+                        </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="border-green-200 text-green-700 text-xs"
-                      >
-                        Running
-                      </Badge>
-                    </div>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                    <div>
-                      <h4 className="font-medium">Breakout Hunter</h4>
-                      <p className="text-sm text-gray-600">
-                        Crypto • 15m timeframe
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-red-600">
-                        -$45.20
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className="border-yellow-200 text-yellow-700 text-xs"
-                      >
-                        Paused
-                      </Badge>
-                    </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Strategies Yet</h3>
+                    <p className="text-gray-600 mb-4">Create your first trading strategy to get started.</p>
+                    <Link href="/dashboard/strategies">
+                      <Button>Create Strategy</Button>
+                    </Link>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -358,50 +503,46 @@ export default function DashboardPage() {
                 <CardTitle>Recent Activity</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                    <div className="flex-1">
-                      <p className="text-sm">
-                        Strategy "Momentum Scalper" executed BUY order
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        AAPL • $187.42 • 2 minutes ago
-                      </p>
-                    </div>
+                {loading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <Skeleton className="h-2 w-2 rounded-full" />
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-full mb-2" />
+                          <Skeleton className="h-3 w-3/4" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                    <div className="flex-1">
-                      <p className="text-sm">
-                        Backtest completed for "Trend Following"
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        ROI: +24.3% • 5 minutes ago
-                      </p>
-                    </div>
+                ) : activities.length > 0 ? (
+                  <div className="space-y-4">
+                    {activities.map((activity) => (
+                      <div key={activity.id} className="flex items-center gap-3">
+                        <div className={`h-2 w-2 rounded-full ${
+                          activity.status === 'success' ? 'bg-green-500' :
+                          activity.status === 'error' ? 'bg-red-500' :
+                          activity.status === 'info' ? 'bg-blue-500' :
+                          'bg-gray-500'
+                        }`}></div>
+                        <div className="flex-1">
+                          <p className="text-sm">
+                            {activity.message}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {activity.details}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                    <div className="flex-1">
-                      <p className="text-sm">
-                        Strategy "Breakout Hunter" stopped
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Risk limit reached • 12 minutes ago
-                      </p>
-                    </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Recent Activity</h3>
+                    <p className="text-gray-600">Activity will appear here as you use the platform.</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                    <div className="flex-1">
-                      <p className="text-sm">New broker connection established</p>
-                      <p className="text-xs text-gray-500">
-                        Interactive Brokers • 1 hour ago
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
