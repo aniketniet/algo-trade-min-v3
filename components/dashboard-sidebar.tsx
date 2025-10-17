@@ -165,13 +165,13 @@ const DashboardSidebar = () => {
           <Phone className="mr-3 h-4 w-4 text-gray-500" />
           Call us +917042132888
         </Link>
-        <Link
+        {/* <Link
           href="#"
           className="flex items-center rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
         >
           <MessageCircle className="mr-3 h-4 w-4 text-gray-500" />
           Chat with us!
-        </Link>
+        </Link> */}
       </div>
     </div>
   )

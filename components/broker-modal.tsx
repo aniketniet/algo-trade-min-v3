@@ -16,8 +16,13 @@ interface Broker {
   authUrl: string;
 }
 
-const BrokerModal = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface BrokerModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  preselectedBroker?: string | null;
+}
+
+const BrokerModal = ({ isOpen, onClose, preselectedBroker }: BrokerModalProps) => {
   const [selectedBroker, setSelectedBroker] = useState<Broker | null>(null);
   const [formData, setFormData] = useState({});
   const [brokers, setBrokers] = useState<Broker[]>([]);
@@ -156,36 +161,63 @@ const BrokerModal = () => {
     try {
       setIsLoading(true);
 
-      // Get the broker connection URL from backend
+      if (selectedBroker?.id === 'dhan') {
+        // Handle Dhan manual token input
+        const { dhanClientId, accessToken } = formData;
+        
+        if (!dhanClientId || !accessToken) {
+          alert('Please enter both Dhan Client ID and Access Token');
+          return;
+        }
+
+        const { data } = await axios.post(`${base_url}/brokers/dhan/connect`, {
+          dhanClientId,
+          accessToken
+        }, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (data.success) {
+          alert(`${selectedBroker?.name} connected successfully!`);
+          onClose();
+          setSelectedBroker(null);
+          setFormData({});
+        } else {
+          alert(`Failed to connect to ${selectedBroker?.name}: ${data.message}`);
+        }
+      } else {
+        // Handle other brokers (Angel One OAuth flow)
         const { data } = await axios.get(`${base_url}/brokers/${selectedBroker?.id}/connect`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-      
-      if (data.data?.loginUrl) {
-        // Open in new window for OAuth flow
-        const popup = window.open(data.data.loginUrl, `${selectedBroker?.id}_auth`, 'width=600,height=800');
         
-        // Listen for popup completion
-        const checkClosed = setInterval(() => {
-          if (popup?.closed) {
-            clearInterval(checkClosed);
-            alert(`${selectedBroker?.name} connection completed!`);
-            setIsOpen(false);
-            setSelectedBroker(null);
-            setFormData({});
-          }
-        }, 1000);
-      } else {
-        // Direct connection (like Dhan sandbox)
-        alert(`${selectedBroker?.name} connected successfully!`);
-        setIsOpen(false);
-        setSelectedBroker(null);
-        setFormData({});
+        if (data.data?.loginUrl) {
+          // Open in new window for OAuth flow
+          const popup = window.open(data.data.loginUrl, `${selectedBroker?.id}_auth`, 'width=600,height=800');
+          
+          // Listen for popup completion
+          const checkClosed = setInterval(() => {
+            if (popup?.closed) {
+              clearInterval(checkClosed);
+              alert(`${selectedBroker?.name} connection completed!`);
+              onClose();
+              setSelectedBroker(null);
+              setFormData({});
+            }
+          }, 1000);
+        } else {
+          // Direct connection
+          alert(`${selectedBroker?.name} connected successfully!`);
+          onClose();
+          setSelectedBroker(null);
+          setFormData({});
+        }
       }
 
     } catch (err) {
       console.error("Error connecting to broker:", err);
-      alert(`Failed to connect to ${selectedBroker?.name}. Please try again.`);
+      const errorMessage = err.response?.data?.message || `Failed to connect to ${selectedBroker?.name}. Please try again.`;
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -218,16 +250,18 @@ const BrokerModal = () => {
     return colors[brokerName] || "bg-gray-500";
   };
 
-  return (
-    <div className="p-8">
-      <button
-        onClick={() => setIsOpen(true)}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-      >
-        <Plus className="w-4 h-4" />
-        Add Broker
-      </button>
+  // Handle preselected broker
+  useEffect(() => {
+    if (preselectedBroker && brokers.length > 0) {
+      const broker = brokers.find(b => b.id === preselectedBroker);
+      if (broker) {
+        setSelectedBroker(broker);
+      }
+    }
+  }, [preselectedBroker, brokers]);
 
+  return (
+    <>
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-hidden animate-fadeIn">
@@ -247,7 +281,7 @@ const BrokerModal = () => {
               </div>
               <button
                 onClick={() => {
-                  setIsOpen(false);
+                  onClose();
                   setSelectedBroker(null);
                   setFormData({});
                 }}
@@ -350,11 +384,62 @@ const BrokerModal = () => {
                         </div>
                       </div>
 
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="text-sm text-blue-800">
-                          You will be redirected to connect your {selectedBroker.name} account.
-                        </p>
-                      </div>
+                      {selectedBroker.id === 'dhan' ? (
+                        <div className="space-y-4">
+                          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                            <p className="text-sm text-yellow-800 font-medium mb-2">
+                              📋 Manual Token Input Required
+                            </p>
+                            <p className="text-sm text-yellow-700">
+                              Please enter your Dhan Client ID and Access Token. The token is valid for 24 hours and will be automatically refreshed daily.
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Dhan Client ID
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Enter your Dhan Client ID"
+                              value={formData.dhanClientId || ''}
+                              onChange={(e) => handleInputChange('dhanClientId', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Access Token
+                            </label>
+                            <input
+                              type="password"
+                              placeholder="Enter your Dhan Access Token"
+                              value={formData.accessToken || ''}
+                              onChange={(e) => handleInputChange('accessToken', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              required
+                            />
+                          </div>
+                          
+                          <div className="bg-blue-50 p-3 rounded-lg">
+                            <p className="text-xs text-blue-700">
+                              💡 <strong>How to get your tokens:</strong><br/>
+                              1. Login to your Dhan account<br/>
+                              2. Go to API section<br/>
+                              3. Generate new access token<br/>
+                              4. Copy Client ID and Access Token
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <p className="text-sm text-blue-800">
+                            You will be redirected to connect your {selectedBroker.name} account.
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <button
@@ -373,7 +458,7 @@ const BrokerModal = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

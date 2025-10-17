@@ -46,6 +46,8 @@ export default function BrokersPage() {
   const [profileData, setProfileData] = useState<Record<string, any>>({});
   const [profileLoadingStates, setProfileLoadingStates] = useState<Record<string, boolean>>({});
   const [showAddBrokerModal, setShowAddBrokerModal] = useState(false);
+  const [selectedBrokerForModal, setSelectedBrokerForModal] = useState<string | null>(null);
+  const [refreshLoadingStates, setRefreshLoadingStates] = useState<Record<string, boolean>>({});
   const base_url = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || 'http://localhost:4000/api';
 
   // Debug: Log available brokers state changes
@@ -195,7 +197,18 @@ export default function BrokersPage() {
 
       const token = Cookies.get("token");
       
-      // Get the broker connection URL from backend
+      if (brokerId === 'dhan') {
+        // For Dhan, show the modal for manual token input
+        setSelectedBrokerForModal('dhan');
+        setShowAddBrokerModal(true);
+        setConnectionStates(prev => ({
+          ...prev,
+          [brokerId]: { isConnected: false, isLoading: false }
+        }));
+        return;
+      }
+      
+      // Get the broker connection URL from backend for other brokers
       const { data } = await axios.get(`${base_url}/brokers/${brokerId}/connect`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -216,7 +229,7 @@ export default function BrokersPage() {
           }
         }, 1000);
       } else {
-        // Direct connection (like Dhan sandbox)
+        // Direct connection
         await getConnectedBrokers();
         await checkBrokerConnection(brokerId);
       }
@@ -298,6 +311,40 @@ export default function BrokersPage() {
       alert(`Failed to ${enabled ? 'start' : 'stop'} trade engine. Please try again.`);
     } finally {
       setEngineLoadingStates(prev => ({
+        ...prev,
+        [brokerId]: false
+      }));
+    }
+  };
+
+  // Refresh Dhan token
+  const refreshDhanToken = async (brokerId: string) => {
+    if (brokerId !== 'dhan') return;
+    
+    try {
+      setRefreshLoadingStates(prev => ({
+        ...prev,
+        [brokerId]: true
+      }));
+
+      const token = Cookies.get("token");
+      const { data } = await axios.post(`${base_url}/brokers/dhan/refresh`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (data.success) {
+        alert('Dhan token refreshed successfully!');
+        // Refresh connection status
+        await checkBrokerConnection(brokerId);
+        await getConnectedBrokers();
+      } else {
+        alert(`Failed to refresh Dhan token: ${data.message}`);
+      }
+    } catch (err) {
+      console.error('Error refreshing Dhan token:', err);
+      alert('Failed to refresh Dhan token. Please try again.');
+    } finally {
+      setRefreshLoadingStates(prev => ({
         ...prev,
         [brokerId]: false
       }));
@@ -633,6 +680,20 @@ export default function BrokersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {broker.id === 'dhan' && (
+                              <DropdownMenuItem 
+                                onClick={() => refreshDhanToken(broker.id)}
+                                disabled={refreshLoadingStates[broker.id]}
+                                className="text-blue-600"
+                              >
+                                {refreshLoadingStates[broker.id] ? (
+                                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="mr-2 h-4 w-4" />
+                                )}
+                                Refresh Token
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem 
                               onClick={() => disconnectBroker(broker.id)}
                               className="text-red-600"
@@ -678,18 +739,43 @@ export default function BrokersPage() {
                           </div>
                         </div>
                         <div className="space-y-3">
-                          <div>
-                            <p className="text-sm text-gray-600">Exchange Enabled</p>
-                            <p className="text-lg font-semibold">
-                              {broker.profile.exchanges?.join(', ') || 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">Product Types</p>
-                            <p className="text-lg font-semibold">
-                              {broker.profile.productTypes?.join(', ') || 'N/A'}
-                            </p>
-                          </div>
+                          {broker.id === 'dhan' ? (
+                            <>
+                              <div>
+                                <p className="text-sm text-gray-600">Active Segments</p>
+                                <p className="text-lg font-semibold">
+                                  {broker.profile.activeSegment || 'N/A'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600">Token Validity</p>
+                                <p className="text-lg font-semibold">
+                                  {broker.profile.tokenValidity || 'N/A'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600">Data Plan</p>
+                                <p className="text-lg font-semibold">
+                                  {broker.profile.dataPlan || 'N/A'}
+                                </p>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div>
+                                <p className="text-sm text-gray-600">Exchange Enabled</p>
+                                <p className="text-lg font-semibold">
+                                  {broker.profile.exchanges?.join(', ') || 'N/A'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-600">Product Types</p>
+                                <p className="text-lg font-semibold">
+                                  {broker.profile.productTypes?.join(', ') || 'N/A'}
+                                </p>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     ) : broker.isConnected ? (
@@ -856,6 +942,18 @@ export default function BrokersPage() {
           </div>
         </div>
       )}
+
+      {/* Broker Modal */}
+      <BrokerModal
+        isOpen={showAddBrokerModal}
+        onClose={() => {
+          setShowAddBrokerModal(false);
+          setSelectedBrokerForModal(null);
+          // Refresh the brokers list when modal closes
+          getConnectedBrokers();
+        }}
+        preselectedBroker={selectedBrokerForModal}
+      />
     </main>
   );
 }
