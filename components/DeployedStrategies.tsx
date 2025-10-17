@@ -101,37 +101,53 @@ const DeployedStrategies = () => {
         });
 
         // Transform the data to match the expected format
-        const transformedBrokerData = Object.entries(brokerGroups).map(([brokerName, brokerStrategies]) => ({
-          id: `${brokerName}-broker`,
-          UserId: 'current-user',
-          BrokerId: brokerName,
-          BrokerClientId: `${brokerName}-client`,
-          BrokerName: brokerName.charAt(0).toUpperCase() + brokerName.slice(1),
-          brokerLogoUrl: `/api/placeholder/32/32`,
-          TradeEngineName: `${brokerName}-engine`,
-          TradeEngineStatus: 'Running',
-          BrokerLoginStatus: true,
-          MaxProfit: null,
-          MaxLoss: null,
-          APIRedirectUrl: '',
-          APILoginUrl: '',
-          brokerAuthQueryString: '',
-          Running: brokerStrategies.filter((s: any) => s.status === 'active' && s.isActiveInEngine).length,
-          Deployed: brokerStrategies.length,
-          DeploymentDetail: brokerStrategies.map((strategy: any) => ({
-            strategyId: strategy.id,
-            StrategyName: strategy.name,
+        const transformedBrokerData = Object.entries(brokerGroups).map(([brokerName, brokerStrategies]) => {
+          const runningCount = brokerStrategies.filter((s: any) => s.status === 'active' && s.isActiveInEngine).length;
+          const tradeEngineStatus = runningCount > 0 ? 'Running' : 'Stopped';
+          
+          console.log(`🔍 Broker ${brokerName}:`, {
+            totalStrategies: brokerStrategies.length,
+            runningCount,
+            tradeEngineStatus,
+            strategies: brokerStrategies.map(s => ({
+              name: s.name,
+              status: s.status,
+              isActiveInEngine: s.isActiveInEngine
+            }))
+          });
+          
+          return {
+            id: `${brokerName}-broker`,
             UserId: 'current-user',
-            DeploymentDetail: [{
-              Running_Status: strategy.status === 'active' && strategy.isActiveInEngine,
-              MaxProfit: 0, // This would come from actual trading data
-              MaxLoss: 0, // This would come from actual trading data
-              TotalPnl: 0, // This would come from actual trading data
-              RunningPositionsCount: 0 // This would come from actual trading data
-            }],
-            OrderDetails: []
-          }))
-        }));
+            BrokerId: brokerName,
+            BrokerClientId: `${brokerName}-client`,
+            BrokerName: brokerName.charAt(0).toUpperCase() + brokerName.slice(1),
+            brokerLogoUrl: `/api/placeholder/32/32`,
+            TradeEngineName: `${brokerName}-engine`,
+            TradeEngineStatus: tradeEngineStatus,
+            BrokerLoginStatus: true,
+            MaxProfit: null,
+            MaxLoss: null,
+            APIRedirectUrl: '',
+            APILoginUrl: '',
+            brokerAuthQueryString: '',
+            Running: runningCount,
+            Deployed: brokerStrategies.length,
+            DeploymentDetail: brokerStrategies.map((strategy: any) => ({
+              strategyId: strategy.id,
+              StrategyName: strategy.name,
+              UserId: 'current-user',
+              DeploymentDetail: [{
+                Running_Status: strategy.status === 'active' && strategy.isActiveInEngine,
+                MaxProfit: 0, // This would come from actual trading data
+                MaxLoss: 0, // This would come from actual trading data
+                TotalPnl: 0, // This would come from actual trading data
+                RunningPositionsCount: 0 // This would come from actual trading data
+              }],
+              OrderDetails: []
+            }))
+          };
+        });
 
         setBrokerData(transformedBrokerData);
       } else {
@@ -228,6 +244,8 @@ const DeployedStrategies = () => {
         }
       }
 
+      // Add a small delay to ensure backend processing is complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
       // Refresh the data to get updated status
       await fetchDeployedStrategies();
     } catch (err: any) {
@@ -290,6 +308,8 @@ const DeployedStrategies = () => {
 
       if (removeResponse.data.success) {
         alert(`Strategy "${strategyName}" has been successfully removed from deployed strategies.`);
+        // Add a small delay to ensure backend processing is complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
         // Refresh the data to get updated status
         await fetchDeployedStrategies();
       } else {
