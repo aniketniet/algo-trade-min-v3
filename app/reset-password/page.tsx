@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Key, Eye, EyeOff, ArrowRight } from "lucide-react";
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function ResetPasswordPage() {
+// Component that uses useSearchParams
+function ResetPasswordForm() {
   const [email, setEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -318,5 +319,37 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading component for Suspense fallback
+function ResetPasswordLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex h-16 items-center justify-between px-6">
+        <Link href="/forgot-password" className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+          <ArrowLeft className="h-5 w-5" />
+          <span>Back</span>
+        </Link>
+      </div>
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+        <div className="w-full max-w-sm">
+          <div className="rounded-2xl bg-white p-8 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main export with Suspense boundary
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordLoading />}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
