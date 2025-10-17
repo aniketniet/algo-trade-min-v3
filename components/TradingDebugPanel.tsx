@@ -56,7 +56,7 @@ const TradingDebugPanel: React.FC = () => {
     try {
       const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || 'http://localhost:4000/api'}/trading-engine/debug`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL || 'http://localhost:4000/api'}/trading/debug`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

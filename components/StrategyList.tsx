@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useTerminal } from "@/hooks/useTerminal";
 import StrategyTerminal from "./StrategyTerminal";
 import TerminalButton from "./TerminalButton";
+import BrokerSelectionModal from "./BrokerSelectionModal";
 
 const StrategyList = () => {
   const { strategies, loading, error } = useStrategiesList();
@@ -17,6 +18,8 @@ const StrategyList = () => {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deployLoadingId, setDeployLoadingId] = useState<string | null>(null);
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
+  const [showBrokerModal, setShowBrokerModal] = useState(false);
+  const [selectedStrategy, setSelectedStrategy] = useState<any>(null);
   const router = useRouter();
   const { isTerminalOpen, currentStrategyId, openTerminal, closeTerminal } = useTerminal();
 
@@ -146,6 +149,14 @@ const StrategyList = () => {
   };
 
   const deployStrategy = async (strategy: any, actionType: "Start" | "Stop" | "Pause" | "Resume") => {
+    // If starting a new strategy, show broker selection modal
+    if (actionType === "Start" && (strategy.status === 'draft' || strategy.status === 'backtested' || strategy.status === 'stopped')) {
+      setSelectedStrategy(strategy);
+      setShowBrokerModal(true);
+      return;
+    }
+
+    // For other actions (Stop, Pause, Resume), use the existing logic
     try {
       const token = Cookies.get("token");
 
@@ -178,6 +189,12 @@ const StrategyList = () => {
     } finally {
       setDeployLoadingId(null);
     }
+  };
+
+  const handleBrokerSelected = (brokerId: string) => {
+    console.log(`Strategy deployed to broker: ${brokerId}`);
+    // Refresh the strategies list
+    window.location.reload();
   };
 
   // Helper function to determine the appropriate action based on strategy status
@@ -466,6 +483,20 @@ const StrategyList = () => {
         <StrategyTerminal 
           strategyId={currentStrategyId} 
           onClose={closeTerminal} 
+        />
+      )}
+
+      {/* Broker Selection Modal */}
+      {showBrokerModal && selectedStrategy && (
+        <BrokerSelectionModal
+          isOpen={showBrokerModal}
+          onClose={() => {
+            setShowBrokerModal(false);
+            setSelectedStrategy(null);
+          }}
+          onSelectBroker={handleBrokerSelected}
+          strategyId={selectedStrategy._id}
+          strategyName={selectedStrategy.name}
         />
       )}
     </div>

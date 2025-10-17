@@ -20,7 +20,7 @@ const StrategyTerminal = ({ strategyId, onClose }: { strategyId: string; onClose
         return;
       }
 
-      const response = await axios.get(`${API_BASE_URL}/trading-engine/strategy-terminal/${strategyId}`, {
+      const response = await axios.get(`${API_BASE_URL}/trading/strategy-terminal/${strategyId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -38,7 +38,7 @@ const StrategyTerminal = ({ strategyId, onClose }: { strategyId: string; onClose
       const token = Cookies.get('token');
       if (!token) return;
 
-      const response = await axios.get(`${API_BASE_URL}/trading-engine/strategy-status/${strategyId}`, {
+      const response = await axios.get(`${API_BASE_URL}/trading/strategy-status/${strategyId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

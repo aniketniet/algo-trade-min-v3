@@ -289,7 +289,7 @@ export default function BrokersPage() {
       };
 
       const { data } = await axios.post(
-        `${base_url}/trading-engine/start-stop-trade-engine`,
+        `${base_url}/trading/start-stop-trade-engine`,
         requestBody,
         {
           headers: {
@@ -724,7 +724,7 @@ export default function BrokersPage() {
                             </p>
                           </div>
                         </div>
-                        <div className="space-y-3">
+                        {/* <div className="space-y-3">
                           <div>
                             <p className="text-sm text-gray-600">Email</p>
                             <p className="text-lg font-semibold">
@@ -737,8 +737,8 @@ export default function BrokersPage() {
                               {broker.profile.mobile || 'N/A'}
                             </p>
                           </div>
-                        </div>
-                        <div className="space-y-3">
+                        </div> */}
+                        {/* <div className="space-y-3">
                           {broker.id === 'dhan' ? (
                             <>
                               <div>
@@ -776,7 +776,7 @@ export default function BrokersPage() {
                               </div>
                             </>
                           )}
-                        </div>
+                        </div> */}
                       </div>
                     ) : broker.isConnected ? (
                       <div className="flex items-center justify-center py-8">
